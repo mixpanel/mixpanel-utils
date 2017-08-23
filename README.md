@@ -293,7 +293,7 @@ In order to use the mixpanel_api module with the Datasets API you must initializ
 dataset = Mixpanel('API Secret','Token',dataset_id='dataset_id')
 ```
 
-The secret you supply may be either the API secret for the entire project or it may be a dataset specific secret that you may create. See [here](LINK NEEDED) for information on how to create a dataset secret.
+The secret you supply may be either the API secret for the entire project or it may be a dataset specific secret that you may create.
 
 If you use a dataset secret then the dataset that can be used is limited to the one that the secret was provisioned for. In addition you cannot delete a dataset or list all datasets with a dataset secret, you must use the project API secret instead. 
 
@@ -326,31 +326,32 @@ You may list all the dataset versions for the dataset that is currently set in t
 
 ```javascript
 {
-    "data": [
-        {
-            "created_at": "2017-06-26T23:10:49.386664Z",
-            "state": {
-                "readable": false,
-                "readable_at": "0001-01-01T00:00:00Z",
-                "ready": false,
-                "ready_at": "0001-01-01T00:00:00Z",
-                "writable": true
-            },
-            "version_id": "5631943370604544"
-        },
-        {
-            "created_at": "2017-06-26T23:00:47.617313Z",
-            "state": {
-                "readable": false,
-                "readable_at": "0001-01-01T00:00:00Z",
-                "ready": false,
-                "ready_at": "0001-01-01T00:00:00Z",
-                "writable": true
-            },
-            "version_id": "5764640680181760"
-        }
-    ]
-}
+             "created_at": "2017-06-26T23:10:49.386664Z",
+             "is_live": false,
+             "state": {
+                 "readable": false,
+                 "readable_at": "0001-01-01T00:00:00Z",
+                 "ready": false,
+                 "ready_at": "0001-01-01T00:00:00Z",
+                 "writable": true
+         id,
+             "version_id": "5631943370604544"
+         },
+         {
+             "created_at": "2017-06-26T23:00:47.617313Z",
+             "is_live": false,
+             "state": {
+                 "readable": false,
+                 "readable_at": "0001-01-01T00:00:00Z",
+                 "ready": false,
+                 "ready_at": "0001-01-01T00:00:00Z",
+                 "writable": true
+             },
+           l "version_id": "5764640680181760"
+         }
+     ]
+} 
+
 ```
 
 You may also list one specific dataset version. This would be done by:
@@ -360,7 +361,7 @@ list_dataset_version(version_id)
 
 Example:
 ```python
-dataset.list_dataset_version(latest_version)
+dataset.list_dataset_version(latest_version_id)
 ```
 This will return the specified version object of the dataset.
 
@@ -379,9 +380,9 @@ dataset.create_dataset_version()
 This method will create a new dataset version for the dataset currently set in dataset_name. It will return a dataset version object. This version of the dataset is writable by default while the ready and readable flags in the version state are false. It will return an object that looks like the following:
 
 ```javascript
-{
     "data": {
         "created_at": "2017-06-26T23:00:47.617313Z",
+        "is_live": false,
         "state": {
             "readable": false,
             "readable_at": "0001-01-01T00:00:00Z",
@@ -392,6 +393,7 @@ This method will create a new dataset version for the dataset currently set in d
         "version_id": "5764640680181760"
     }
 }
+
 ```
 
 ###### Updating a dataset version
@@ -445,10 +447,4 @@ dataset.wait_until_dataset_version_ready(latest_version_id)
 # now you can query the latest dataset version
 ```
 
-This method polls whether the specified dataset version is ready at intervals of 60 seconds. Once a dataset version is in a ready state it can be queried.
-
-
-
-
-
-
+This method polls whether the specified dataset version is ready at intervals of 60 seconds. Once a dataset version is in a ready state and the is_live field is set to true, it can be queried in the insights API
