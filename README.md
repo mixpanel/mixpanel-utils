@@ -326,6 +326,8 @@ You may list all the dataset versions for the dataset that is currently set in t
 
 ```javascript
 {
+	[
+		{
              "created_at": "2017-06-26T23:10:49.386664Z",
              "is_live": false,
              "state": {
@@ -334,8 +336,9 @@ You may list all the dataset versions for the dataset that is currently set in t
                  "ready": false,
                  "ready_at": "0001-01-01T00:00:00Z",
                  "writable": true
-         id,
+            }
              "version_id": "5631943370604544"
+
          },
          {
              "created_at": "2017-06-26T23:00:47.617313Z",
@@ -347,10 +350,10 @@ You may list all the dataset versions for the dataset that is currently set in t
                  "ready_at": "0001-01-01T00:00:00Z",
                  "writable": true
              },
-           l "version_id": "5764640680181760"
+             "version_id": "5764640680181760"
          }
-     ]
-} 
+    ]     
+}
 
 ```
 
@@ -380,6 +383,7 @@ dataset.create_dataset_version()
 This method will create a new dataset version for the dataset currently set in dataset_name. It will return a dataset version object. This version of the dataset is writable by default while the ready and readable flags in the version state are false. It will return an object that looks like the following:
 
 ```javascript
+{
     "data": {
         "created_at": "2017-06-26T23:00:47.617313Z",
         "is_live": false,
