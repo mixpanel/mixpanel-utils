@@ -70,7 +70,7 @@ These are functions that should allow you to complete a number of tasks with min
 
 ###### Initialization
 ```python
-__init__(api_secret, token=None, dataset_name=None, timeout=120, pool_size=None, read_pool_size=None, max_retries=10, debug=False)
+__init__(api_secret, token=None, dataset_id=None, timeout=120, pool_size=None, read_pool_size=None, max_retries=10, debug=False)
 ```
 Example:
 ```python
@@ -322,7 +322,7 @@ Example:
 current_dataset_versions = dataset.list_all_dataset_versions()
 ```
 
-You may list all the dataset versions for the dataset that is currently set in the dataset_name parameter on the Mixpanel object. This will return an object that looks like the following example:
+You may list all the dataset versions for the dataset that is currently set in the dataset_id parameter on the Mixpanel object. This will return an object that looks like the following example:
 
 ```javascript
 {
@@ -380,7 +380,7 @@ Example:
 dataset.create_dataset_version()
 ```
 
-This method will create a new dataset version for the dataset currently set in dataset_name. It will return a dataset version object. This version of the dataset is writable by default while the ready and readable flags in the version state are false. It will return an object that looks like the following:
+This method will create a new dataset version for the dataset currently set in dataset_id. It will return a dataset version object. This version of the dataset is writable by default while the ready and readable flags in the version state are false. It will return an object that looks like the following:
 
 ```javascript
 {
