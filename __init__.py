@@ -202,12 +202,12 @@ class Mixpanel(object):
                 Mixpanel.LOGGER.warning('Error code: ' + str(e.code))
                 Mixpanel.LOGGER.warning('Reason: ' + str(e.reason))
                 if hasattr(e, 'read'):
-                    Mixpanel.LOGGER.warning('Response :' + e.read())
+                    Mixpanel.LOGGER.warning('Response: ' + e.read())
             except urllib2.URLError as e:
                 Mixpanel.LOGGER.warning('We failed to reach a server.')
                 Mixpanel.LOGGER.warning('Reason: ' + str(e.reason))
                 if hasattr(e, 'read'):
-                    Mixpanel.LOGGER.warning('Response :' + e.read())
+                    Mixpanel.LOGGER.warning('Response: ' + e.read())
             else:
                 try:
                     # If the response is gzipped we go ahead and decompress
