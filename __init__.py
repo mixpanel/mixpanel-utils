@@ -1094,7 +1094,7 @@ class Mixpanel(object):
             for item in items:
                 row = []
                 try:
-                    row.append(item[initial_header_value])
+                    row.append((item[initial_header_value]).encode('utf-8'))
                 except KeyError:
                     row.append('')
 
@@ -1104,7 +1104,7 @@ class Mixpanel(object):
                     except AttributeError:
                         row.append(item[props_key][subkey])
                     except KeyError:
-                        row.append("")
+                        row.append('')
                 writer.writerow(row)
 
     @staticmethod
