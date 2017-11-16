@@ -38,7 +38,7 @@
 
 The mixpanel-api module is designed to allow Mixpanel users to rapidly and easily utilize our export APIs to accomplish common tasks such as people/event exports, imports, people profile transform, deletions, etc...
 
-A complete API reference is available here: http://mixpanel-api.readthedocs.io/
+A complete API reference for this module is available here: http://mixpanel-api.readthedocs.io/
 
 #### Installation
 
