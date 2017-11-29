@@ -57,7 +57,7 @@ from mixpanel_api import Mixpanel
 ```
 Then create a new Mixpanel object like:
 ```python
-mixpanel = Mixpanel('API Secret','Token')
+mixpanel = Mixpanel('API Secret', token='Token')
 ```
 And use the functions below.
 
