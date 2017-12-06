@@ -743,8 +743,6 @@ class Mixpanel(object):
             Mixpanel.LOGGER.warning('Error querying /export API')
             return
         raw_data = file_like_object.getvalue().split('\n')
-        # Remove the last line which is only a newline
-        raw_data.pop()
         events = []
         for line in raw_data:
             events.append(json.loads(line))
