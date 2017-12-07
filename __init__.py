@@ -738,7 +738,7 @@ class Mixpanel(object):
             headers = {'Accept-encoding': 'gzip'}
         response = self.request(Mixpanel.RAW_API, ['export'], params, headers=headers)
         try:
-            file_like_object = cStringIO.StringIO(response)
+            file_like_object = cStringIO.StringIO(response.strip())
         except TypeError as e:
             Mixpanel.LOGGER.warning('Error querying /export API')
             return
