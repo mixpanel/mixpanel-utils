@@ -135,7 +135,7 @@ Deletes people profiles using the engage endpoint. You may provide a list of pro
 
 ###### Set properties
 ```python
-people_set(value, profiles=None, query_params=None, ignore_alias=True, backup=True, backup_file=None, timezone_offset=None)
+people_set(value, profiles=None, query_params=None, ignore_alias=False, backup=True, backup_file=None, timezone_offset=None)
 ```
 Example:
 ```python
@@ -145,7 +145,7 @@ Sets people properties to a specific value using the engage endpoint. This shoul
 
 ###### Set once properties
 ```python
-people_set_once(value, profiles=None, query_params=None, ignore_alias=True, backup=False,backup_file=None, timezone_offset=None)
+people_set_once(value, profiles=None, query_params=None, ignore_alias=False, backup=False,backup_file=None, timezone_offset=None)
 ```
 Example:
 ```python
@@ -155,7 +155,7 @@ Sets people properties but only if they do not already exist. See [people_set](#
 
 ###### Unset properties
 ```python
-people_unset(value, profiles=None, query_params=None, ignore_alias=True, backup=True, backup_file=None, timezone_offset=None)
+people_unset(value, profiles=None, query_params=None, ignore_alias=False, backup=True, backup_file=None, timezone_offset=None)
 ```
 Example:
 ```python
@@ -165,7 +165,7 @@ Unset a people property on the profiles targeted. In this case value should be a
 
 ###### Increment a property
 ```python
-people_add(value, profiles=None, query_params=None, ignore_alias=True, backup=True, backup_file=None, timezone_offset=None)
+people_add(value, profiles=None, query_params=None, ignore_alias=False, backup=True, backup_file=None, timezone_offset=None)
 ```
 Example:
 ```python
@@ -175,7 +175,7 @@ Adds an amount to a property. Value is a dictionary where the key is the propert
 
 ###### Append to a property
 ```python
-people_append(value, profiles=None, query_params=None, ignore_alias=True, backup=True,backup_file=None, timezone_offset=None)
+people_append(value, profiles=None, query_params=None, ignore_alias=False, backup=True,backup_file=None, timezone_offset=None)
 ```
 Example:
 ```python
@@ -185,7 +185,7 @@ Appends a value to a list property. Value is a dictionary where the key is the n
 
 ###### Union a property
 ```python
-people_union(value, profiles=None, query_params=None, ignore_alias=True, backup=True, backup_file=None, timezone_offset=None)
+people_union(value, profiles=None, query_params=None, ignore_alias=False, backup=True, backup_file=None, timezone_offset=None)
 ```
 Example:
 ```python
@@ -195,7 +195,7 @@ Takes a dictionary containing keys and list values. The list values in the reque
 
 ###### Remove a people property
 ```python
-people_remove(value, profiles=None, query_params=None, ignore_alias=True, backup=True, backup_file=None, timezone_offset=None)
+people_remove(value, profiles=None, query_params=None, ignore_alias=False, backup=True, backup_file=None, timezone_offset=None)
 ```
 Example:
 ```python
@@ -205,7 +205,7 @@ Takes a dictionary containing keys and values. The value in the request is remov
 
 ###### Change a people property name
 ```python
-people_change_property_name(old_name, new_name, profiles=None, query_params=None, ignore_alias=True,backup=True, backup_file=None, unset=True, timezone_offset=0)
+people_change_property_name(old_name, new_name, profiles=None, query_params=None, ignore_alias=False, backup=True, backup_file=None, unset=True, timezone_offset=0)
 ```
 Example:
 ```python
