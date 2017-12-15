@@ -142,7 +142,7 @@ class Mixpanel(object):
             pass
         return {'Revenue': total}
 
-    def request(self, base_url, path_components, params, method='GET', headers=None, retries=0):
+    def request(self, base_url, path_components, params, method='GET', headers=None, raw_stream=False, retries=0):
         """Base method for sending HTTP requests to the various Mixpanel APIs
 
         :param base_url: Ex: https://api.mixpanel.com
@@ -150,12 +150,14 @@ class Mixpanel(object):
         :param params: dictionary containing the Mixpanel parameters for the API request
         :param method: HTTP method verb: 'GET', 'POST', 'PUT', 'DELETE', 'PATCH'
         :param headers: HTTP request headers dict (Default value = None)
+        :param raw_stream: Return the raw file-like response directly from urlopen
         :param retries: number of times the request has been retried (Default value = 0)
         :type base_url: str
         :type path_components: list
         :type params: dict
         :type method: str
         :type headers: dict
+        :type raw_stream: bool
         :type retries: int
         :return: JSON data returned from API
         :rtype: str
@@ -197,6 +199,8 @@ class Mixpanel(object):
 
             try:
                 response = urllib2.urlopen(request, timeout=self.timeout)
+                if raw_stream and base_url == Mixpanel.RAW_API:
+                    return response
             except urllib2.HTTPError as e:
                 Mixpanel.LOGGER.warning('The server couldn\'t fulfill the request.')
                 Mixpanel.LOGGER.warning('Error code: ' + str(e.code))
@@ -720,15 +724,17 @@ class Mixpanel(object):
         params = {'from_date': from_date, 'to_date': to_date, 'events': events}
         self.jql_operation(jql_script, '$set', jql_params=params, backup=False)
 
-    def query_export(self, params, add_gzip_header=False):
+    def query_export(self, params, add_gzip_header=False, raw_stream=False):
         """Queries the /export API and returns a list of Mixpanel event dicts
 
         https://mixpanel.com/help/reference/exporting-raw-data#export-api-reference
 
         :param params: Parameters to use for the /export API request
         :param add_gzip_header: Adds 'Accept-encoding: gzip' to the request headers (Default value = False)
+        :param raw_stream: Returns the raw file-like response directly from urlopen instead of creating a list
         :type params: dict
         :type add_gzip_header: bool
+        :type raw_stream: bool
         :return: A list of Mixpanel event dicts
         :rtype: list
 
@@ -736,7 +742,9 @@ class Mixpanel(object):
         headers = {}
         if add_gzip_header:
             headers = {'Accept-encoding': 'gzip'}
-        response = self.request(Mixpanel.RAW_API, ['export'], params, headers=headers)
+        response = self.request(Mixpanel.RAW_API, ['export'], params, headers=headers, raw_stream=raw_stream)
+        if raw_stream:
+            return response
         try:
             file_like_object = cStringIO.StringIO(response.strip())
         except TypeError as e:
@@ -775,7 +783,7 @@ class Mixpanel(object):
         return engage_paginator.fetch_all(params)
 
     def export_events(self, output_file, params, format='json', timezone_offset=None, add_gzip_header=False,
-                      compress=False):
+                      compress=False, raw_stream=False, buffer_size=1024):
         """Queries the /export API and writes the Mixpanel event data to disk as a JSON or CSV file. Optionally gzip file.
 
         https://mixpanel.com/help/reference/exporting-raw-data#export-api-reference
@@ -787,12 +795,16 @@ class Mixpanel(object):
             timestamps from project time to UTC
         :param add_gzip_header: Adds 'Accept-encoding: gzip' to the request headers (Default value = False)
         :param compress: Option to gzip output_file (Default value = False)
+        :param raw_stream: Option to stream the newline delimited JSON response directly to output_file
+        :param buffer_size: Buffer size in bytes to use if raw_stream is True (Default value = 1024)
         :type output_file: str
         :type params: dict
         :type format: str
         :type timezone_offset: int | float
         :type add_gzip_header: bool
         :type compress: bool
+        :type raw_stream: bool
+        :type buffer_size: int
 
         """
         # Increase timeout to 20 minutes if it's still set to default, /export requests can take a long time
@@ -800,15 +812,19 @@ class Mixpanel(object):
         if self.timeout == 120:
             self.timeout = 1200
 
-        events = self.query_export(params, add_gzip_header=add_gzip_header)
+        events = self.query_export(params, add_gzip_header=add_gzip_header, raw_stream=raw_stream)
 
-        if timezone_offset is not None:
-            # Convert timezone_offset from hours to seconds
-            timezone_offset = timezone_offset * 3600
-            for event in events:
-                event['properties']['time'] = int(event['properties']['time'] - timezone_offset)
+        if raw_stream:
+            with open(output_file, 'wb') as fp:
+                shutil.copyfileobj(events, fp, buffer_size)
+        else:
+            if timezone_offset is not None:
+                # Convert timezone_offset from hours to seconds
+                timezone_offset = timezone_offset * 3600
+                for event in events:
+                    event['properties']['time'] = int(event['properties']['time'] - timezone_offset)
 
-        Mixpanel.export_data(events, output_file, format=format, compress=compress)
+            Mixpanel.export_data(events, output_file, format=format, compress=compress)
 
         # If we modified the default timeout above, set it back
         if timeout_backup == 120:
