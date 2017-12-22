@@ -9,7 +9,6 @@ import shutil
 import time
 import os
 import datetime
-from copy import deepcopy
 from inspect import isfunction
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
@@ -256,6 +255,8 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
         assert self.token, "Project token required for People operation!"
@@ -282,6 +283,10 @@ class Mixpanel(object):
         self._dispatch_batches(self.IMPORT_API, 'engage', profiles_list,
                                [{}, self.token, operation, value, ignore_alias, dynamic])
 
+        profile_count = len(profiles_list)
+        Mixpanel.LOGGER.debug('Operation applied to ' + str(profile_count) + ' profiles')
+        return profile_count
+
     def people_delete(self, profiles=None, query_params=None, timezone_offset=None, ignore_alias=True, backup=True,
                       backup_file=None):
         """Deletes the specified People profiles with the $delete operation and optionally creates a backup file
@@ -299,11 +304,13 @@ class Mixpanel(object):
         :type timezone_offset: int | float
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles deleted
+        :rtype: int
 
         """
-        self.people_operation('$delete', '', profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$delete', '', profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def people_set(self, value, profiles=None, query_params=None, timezone_offset=None, ignore_alias=False, backup=True,
                    backup_file=None):
@@ -325,11 +332,13 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
-        self.people_operation('$set', value=value, profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$set', value=value, profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def people_set_once(self, value, profiles=None, query_params=None, timezone_offset=None, ignore_alias=False,
                         backup=False, backup_file=None):
@@ -352,11 +361,13 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
-        self.people_operation('$set_once', value=value, profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$set_once', value=value, profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def people_unset(self, value, profiles=None, query_params=None, timezone_offset=None, ignore_alias=False,
                      backup=True, backup_file=None):
@@ -379,11 +390,13 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
-        self.people_operation('$unset', value=value, profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$unset', value=value, profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def people_add(self, value, profiles=None, query_params=None, timezone_offset=None, ignore_alias=False, backup=True,
                    backup_file=None):
@@ -407,11 +420,13 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
-        self.people_operation('$add', value=value, profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$add', value=value, profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def people_append(self, value, profiles=None, query_params=None, timezone_offset=None, ignore_alias=False,
                       backup=True, backup_file=None):
@@ -435,11 +450,13 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
-        self.people_operation('$append', value=value, profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$append', value=value, profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def people_union(self, value, profiles=None, query_params=None, timezone_offset=None, ignore_alias=False,
                      backup=True, backup_file=None):
@@ -463,11 +480,13 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
-        self.people_operation('$union', value=value, profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$union', value=value, profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def people_remove(self, value, profiles=None, query_params=None, timezone_offset=None, ignore_alias=False,
                       backup=True, backup_file=None):
@@ -491,11 +510,13 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
-        self.people_operation('$remove', value=value, profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$remove', value=value, profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def people_change_property_name(self, old_name, new_name, profiles=None, query_params=None, timezone_offset=None,
                                     ignore_alias=False, backup=True, backup_file=None, unset=True):
@@ -521,17 +542,22 @@ class Mixpanel(object):
         :type backup: bool
         :type backup_file: str
         :type unset: bool
+        :return: Number of profiles operated on
+        :rtype: int
 
 
         """
         if profiles is None and query_params is None:
             query_params = {'selector': '(defined (properties["' + old_name + '"]))'}
-        self.people_operation('$set', lambda p: {new_name: p['$properties'][old_name]}, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        profile_count = self.people_operation('$set', lambda p: {new_name: p['$properties'][old_name]},
+                                              profiles=profiles, query_params=query_params,
+                                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                              backup_file=backup_file)
         if unset:
             self.people_operation('$unset', [old_name], profiles=profiles, query_params=query_params,
                                   timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=False)
+
+        return profile_count
 
     def people_revenue_property_from_transactions(self, profiles=None, query_params=None, timezone_offset=None,
                                                   ignore_alias=False, backup=True, backup_file=None):
@@ -553,14 +579,16 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
         if profiles is None and query_params is None:
             query_params = {'selector': '(defined (properties["$transactions"]))'}
 
-        self.people_operation('$set', Mixpanel.sum_transactions, profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$set', Mixpanel.sum_transactions, profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def deduplicate_people(self, profiles=None, prop_to_match='$email', merge_props=False, case_sensitive=False,
                            backup=True, backup_file=None):
@@ -584,6 +612,8 @@ class Mixpanel(object):
         :type case_sensitive: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles deleted
+        :rtype: int
 
         """
         main_reference = {}
@@ -645,7 +675,7 @@ class Mixpanel(object):
             self.people_operation('$set_once', lambda p: p['$properties'], profiles=update_profiles, ignore_alias=True,
                                   backup=False)
 
-        self.people_operation('$delete', '', profiles=delete_profiles, ignore_alias=True, backup=False)
+        return self.people_operation('$delete', '', profiles=delete_profiles, ignore_alias=True, backup=False)
 
     def query_jql(self, script, params=None):
         """Query the Mixpanel JQL API
@@ -688,6 +718,8 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
 
@@ -699,8 +731,8 @@ class Mixpanel(object):
             # backs up ALL profiles, not just those affected by the JQL since jql_data might not contain full profiles
             self.export_people(backup_file)
 
-        self.people_operation(people_operation, update_value, profiles=jql_data, ignore_alias=ignore_alias,
-                              backup=False)
+        return self.people_operation(people_operation, update_value, profiles=jql_data, ignore_alias=ignore_alias,
+                                     backup=False)
 
     def event_counts_to_people(self, from_date, events):
         """Sets the per user count of events in events list param as People properties
@@ -709,6 +741,8 @@ class Mixpanel(object):
         :param events: A list of strings of event names to be counted
         :type from_date: datetime | str
         :type events: list[str]
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
 
@@ -724,7 +758,7 @@ class Mixpanel(object):
             from_date = from_date.strftime('%Y-%m-%d')
 
         params = {'from_date': from_date, 'to_date': to_date, 'events': events}
-        self.jql_operation(jql_script, '$set', jql_params=params, backup=False)
+        return self.jql_operation(jql_script, '$set', jql_params=params, backup=False)
 
     def query_export(self, params, add_gzip_header=False, raw_stream=False):
         """Queries the /export API and returns a list of Mixpanel event dicts
