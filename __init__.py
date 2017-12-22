@@ -284,7 +284,7 @@ class Mixpanel(object):
                                [{}, self.token, operation, value, ignore_alias, dynamic])
 
         profile_count = len(profiles_list)
-        Mixpanel.LOGGER.debug('Operation applied to ' + str(profile_count) + ' profiles')
+        Mixpanel.LOGGER.debug(operation + ' operation applied to ' + str(profile_count) + ' profiles')
         return profile_count
 
     def people_delete(self, profiles=None, query_params=None, timezone_offset=None, ignore_alias=True, backup=True,
