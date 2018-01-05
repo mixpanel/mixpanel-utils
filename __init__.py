@@ -779,19 +779,23 @@ class Mixpanel(object):
         if add_gzip_header:
             headers = {'Accept-encoding': 'gzip'}
         response = self.request(Mixpanel.RAW_API, ['export'], params, headers=headers, raw_stream=raw_stream)
-        if raw_stream:
-            return response
+        if response != '':
+            if raw_stream:
+                return response
+            else:
+                try:
+                    file_like_object = cStringIO.StringIO(response.strip())
+                except TypeError as e:
+                    Mixpanel.LOGGER.warning('Error querying /export API')
+                    return
+                raw_data = file_like_object.getvalue().split('\n')
+                events = []
+                for line in raw_data:
+                    events.append(json.loads(line))
+                return events
         else:
-            try:
-                file_like_object = cStringIO.StringIO(response.strip())
-            except TypeError as e:
-                Mixpanel.LOGGER.warning('Error querying /export API')
-                return
-            raw_data = file_like_object.getvalue().split('\n')
-            events = []
-            for line in raw_data:
-                events.append(json.loads(line))
-            return events
+            Mixpanel.LOGGER.warning('/export API response empty')
+            return
 
     def query_engage(self, params=None, timezone_offset=None):
         """Queries the /engage API and returns a list of Mixpanel People profile dicts
