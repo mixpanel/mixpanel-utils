@@ -142,7 +142,7 @@ class Mixpanel(object):
             pass
         return {'Revenue': total}
 
-    def request(self, base_url, path_components, params, method='GET', headers=None, retries=0):
+    def request(self, base_url, path_components, params, method='GET', headers=None, raw_stream=False, retries=0):
         """Base method for sending HTTP requests to the various Mixpanel APIs
 
         :param base_url: Ex: https://api.mixpanel.com
@@ -150,12 +150,15 @@ class Mixpanel(object):
         :param params: dictionary containing the Mixpanel parameters for the API request
         :param method: HTTP method verb: 'GET', 'POST', 'PUT', 'DELETE', 'PATCH'
         :param headers: HTTP request headers dict (Default value = None)
+        :param raw_stream: Return the raw file-like response directly from urlopen, only works when base_url is
+            Mixpanel.RAW_API
         :param retries: number of times the request has been retried (Default value = 0)
         :type base_url: str
         :type path_components: list
         :type params: dict
         :type method: str
         :type headers: dict
+        :type raw_stream: bool
         :type retries: int
         :return: JSON data returned from API
         :rtype: str
@@ -184,19 +187,21 @@ class Mixpanel(object):
                     # Mixpanel.LOGGER.debug(method + ' data: ' + data)
             Mixpanel.LOGGER.debug("Request Method: " + method)
             Mixpanel.LOGGER.debug("Request URL: " + request_url)
-            
+
             if headers is None:
                 headers = {}
             headers['Authorization'] = 'Basic {encoded_secret}'.format(
                 encoded_secret=base64.b64encode(self.api_secret + ':'))
             request = urllib2.Request(request_url, data, headers)
-            Mixpanel.LOGGER.debug("Request Headers: " + json.dumps(headers))    
+            Mixpanel.LOGGER.debug("Request Headers: " + json.dumps(headers))
             # This is the only way to use HTTP methods other than GET or POST with urllib2
             if method != 'GET' and method != 'POST':
                 request.get_method = lambda: method
 
             try:
                 response = urllib2.urlopen(request, timeout=self.timeout)
+                if raw_stream and base_url == Mixpanel.RAW_API:
+                    return response
             except urllib2.HTTPError as e:
                 Mixpanel.LOGGER.warning('The server couldn\'t fulfill the request.')
                 Mixpanel.LOGGER.warning('Error code: ' + str(e.code))
@@ -250,6 +255,8 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
         assert self.token, "Project token required for People operation!"
@@ -276,6 +283,10 @@ class Mixpanel(object):
         self._dispatch_batches(self.IMPORT_API, 'engage', profiles_list,
                                [{}, self.token, operation, value, ignore_alias, dynamic])
 
+        profile_count = len(profiles_list)
+        Mixpanel.LOGGER.debug(operation + ' operation applied to ' + str(profile_count) + ' profiles')
+        return profile_count
+
     def people_delete(self, profiles=None, query_params=None, timezone_offset=None, ignore_alias=True, backup=True,
                       backup_file=None):
         """Deletes the specified People profiles with the $delete operation and optionally creates a backup file
@@ -293,11 +304,13 @@ class Mixpanel(object):
         :type timezone_offset: int | float
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles deleted
+        :rtype: int
 
         """
-        self.people_operation('$delete', '', profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$delete', '', profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def people_set(self, value, profiles=None, query_params=None, timezone_offset=None, ignore_alias=False, backup=True,
                    backup_file=None):
@@ -319,11 +332,13 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
-        self.people_operation('$set', value=value, profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$set', value=value, profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def people_set_once(self, value, profiles=None, query_params=None, timezone_offset=None, ignore_alias=False,
                         backup=False, backup_file=None):
@@ -346,11 +361,13 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
-        self.people_operation('$set_once', value=value, profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$set_once', value=value, profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def people_unset(self, value, profiles=None, query_params=None, timezone_offset=None, ignore_alias=False,
                      backup=True, backup_file=None):
@@ -373,11 +390,13 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
-        self.people_operation('$unset', value=value, profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$unset', value=value, profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def people_add(self, value, profiles=None, query_params=None, timezone_offset=None, ignore_alias=False, backup=True,
                    backup_file=None):
@@ -401,11 +420,13 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
-        self.people_operation('$add', value=value, profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$add', value=value, profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def people_append(self, value, profiles=None, query_params=None, timezone_offset=None, ignore_alias=False,
                       backup=True, backup_file=None):
@@ -429,11 +450,13 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
-        self.people_operation('$append', value=value, profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$append', value=value, profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def people_union(self, value, profiles=None, query_params=None, timezone_offset=None, ignore_alias=False,
                      backup=True, backup_file=None):
@@ -457,11 +480,13 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
-        self.people_operation('$union', value=value, profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$union', value=value, profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def people_remove(self, value, profiles=None, query_params=None, timezone_offset=None, ignore_alias=False,
                       backup=True, backup_file=None):
@@ -485,11 +510,13 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
-        self.people_operation('$remove', value=value, profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$remove', value=value, profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def people_change_property_name(self, old_name, new_name, profiles=None, query_params=None, timezone_offset=None,
                                     ignore_alias=False, backup=True, backup_file=None, unset=True):
@@ -515,17 +542,22 @@ class Mixpanel(object):
         :type backup: bool
         :type backup_file: str
         :type unset: bool
+        :return: Number of profiles operated on
+        :rtype: int
 
 
         """
         if profiles is None and query_params is None:
             query_params = {'selector': '(defined (properties["' + old_name + '"]))'}
-        self.people_operation('$set', lambda p: {new_name: p['$properties'][old_name]}, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        profile_count = self.people_operation('$set', lambda p: {new_name: p['$properties'][old_name]},
+                                              profiles=profiles, query_params=query_params,
+                                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                              backup_file=backup_file)
         if unset:
             self.people_operation('$unset', [old_name], profiles=profiles, query_params=query_params,
                                   timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=False)
+
+        return profile_count
 
     def people_revenue_property_from_transactions(self, profiles=None, query_params=None, timezone_offset=None,
                                                   ignore_alias=False, backup=True, backup_file=None):
@@ -547,14 +579,16 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
         if profiles is None and query_params is None:
             query_params = {'selector': '(defined (properties["$transactions"]))'}
 
-        self.people_operation('$set', Mixpanel.sum_transactions, profiles=profiles, query_params=query_params,
-                              timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
-                              backup_file=backup_file)
+        return self.people_operation('$set', Mixpanel.sum_transactions, profiles=profiles, query_params=query_params,
+                                     timezone_offset=timezone_offset, ignore_alias=ignore_alias, backup=backup,
+                                     backup_file=backup_file)
 
     def deduplicate_people(self, profiles=None, prop_to_match='$email', merge_props=False, case_sensitive=False,
                            backup=True, backup_file=None):
@@ -578,6 +612,8 @@ class Mixpanel(object):
         :type case_sensitive: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles deleted
+        :rtype: int
 
         """
         main_reference = {}
@@ -639,7 +675,7 @@ class Mixpanel(object):
             self.people_operation('$set_once', lambda p: p['$properties'], profiles=update_profiles, ignore_alias=True,
                                   backup=False)
 
-        self.people_operation('$delete', '', profiles=delete_profiles, ignore_alias=True, backup=False)
+        return self.people_operation('$delete', '', profiles=delete_profiles, ignore_alias=True, backup=False)
 
     def query_jql(self, script, params=None):
         """Query the Mixpanel JQL API
@@ -682,6 +718,8 @@ class Mixpanel(object):
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
 
@@ -693,8 +731,8 @@ class Mixpanel(object):
             # backs up ALL profiles, not just those affected by the JQL since jql_data might not contain full profiles
             self.export_people(backup_file)
 
-        self.people_operation(people_operation, update_value, profiles=jql_data, ignore_alias=ignore_alias,
-                              backup=False)
+        return self.people_operation(people_operation, update_value, profiles=jql_data, ignore_alias=ignore_alias,
+                                     backup=False)
 
     def event_counts_to_people(self, from_date, events):
         """Sets the per user count of events in events list param as People properties
@@ -703,6 +741,8 @@ class Mixpanel(object):
         :param events: A list of strings of event names to be counted
         :type from_date: datetime | str
         :type events: list[str]
+        :return: Number of profiles operated on
+        :rtype: int
 
         """
 
@@ -718,17 +758,19 @@ class Mixpanel(object):
             from_date = from_date.strftime('%Y-%m-%d')
 
         params = {'from_date': from_date, 'to_date': to_date, 'events': events}
-        self.jql_operation(jql_script, '$set', jql_params=params, backup=False)
+        return self.jql_operation(jql_script, '$set', jql_params=params, backup=False)
 
-    def query_export(self, params, add_gzip_header=False):
+    def query_export(self, params, add_gzip_header=False, raw_stream=False):
         """Queries the /export API and returns a list of Mixpanel event dicts
 
         https://mixpanel.com/help/reference/exporting-raw-data#export-api-reference
 
         :param params: Parameters to use for the /export API request
         :param add_gzip_header: Adds 'Accept-encoding: gzip' to the request headers (Default value = False)
+        :param raw_stream: Returns the raw file-like response directly from urlopen instead of creating a list
         :type params: dict
         :type add_gzip_header: bool
+        :type raw_stream: bool
         :return: A list of Mixpanel event dicts
         :rtype: list
 
@@ -736,17 +778,24 @@ class Mixpanel(object):
         headers = {}
         if add_gzip_header:
             headers = {'Accept-encoding': 'gzip'}
-        response = self.request(Mixpanel.RAW_API, ['export'], params, headers=headers)
-        try:
-            file_like_object = cStringIO.StringIO(response.strip())
-        except TypeError as e:
-            Mixpanel.LOGGER.warning('Error querying /export API')
+        response = self.request(Mixpanel.RAW_API, ['export'], params, headers=headers, raw_stream=raw_stream)
+        if response != '':
+            if raw_stream:
+                return response
+            else:
+                try:
+                    file_like_object = cStringIO.StringIO(response.strip())
+                except TypeError as e:
+                    Mixpanel.LOGGER.warning('Error querying /export API')
+                    return
+                raw_data = file_like_object.getvalue().split('\n')
+                events = []
+                for line in raw_data:
+                    events.append(json.loads(line))
+                return events
+        else:
+            Mixpanel.LOGGER.warning('/export API response empty')
             return
-        raw_data = file_like_object.getvalue().split('\n')
-        events = []
-        for line in raw_data:
-            events.append(json.loads(line))
-        return events
 
     def query_engage(self, params=None, timezone_offset=None):
         """Queries the /engage API and returns a list of Mixpanel People profile dicts
@@ -775,7 +824,7 @@ class Mixpanel(object):
         return engage_paginator.fetch_all(params)
 
     def export_events(self, output_file, params, format='json', timezone_offset=None, add_gzip_header=False,
-                      compress=False):
+                      compress=False, request_per_day=False, raw_stream=False, buffer_size=1024):
         """Queries the /export API and writes the Mixpanel event data to disk as a JSON or CSV file. Optionally gzip file.
 
         https://mixpanel.com/help/reference/exporting-raw-data#export-api-reference
@@ -787,12 +836,20 @@ class Mixpanel(object):
             timestamps from project time to UTC
         :param add_gzip_header: Adds 'Accept-encoding: gzip' to the request headers (Default value = False)
         :param compress: Option to gzip output_file (Default value = False)
+        :param request_per_day: Option to make one API request (and output file) per day in the exported date range
+            (Default value = False)
+        :param raw_stream: Option to stream the newline delimited JSON response directly to output_file. If True, format
+            , timezone_offset and compress arguments are ignored (Default value = False)
+        :param buffer_size: Buffer size in bytes to use if raw_stream is True (Default value = 1024)
         :type output_file: str
         :type params: dict
         :type format: str
         :type timezone_offset: int | float
         :type add_gzip_header: bool
         :type compress: bool
+        :type request_per_day: bool
+        :type raw_stream: bool
+        :type buffer_size: int
 
         """
         # Increase timeout to 20 minutes if it's still set to default, /export requests can take a long time
@@ -800,17 +857,46 @@ class Mixpanel(object):
         if self.timeout == 120:
             self.timeout = 1200
 
-        events = self.query_export(params, add_gzip_header=add_gzip_header)
+        request_count = 0
+        if request_per_day:
+            date_format = '%Y-%m-%d'
+            f = datetime.datetime.strptime(params['from_date'], date_format)
+            t = datetime.datetime.strptime(params['to_date'], date_format)
+            delta = t - f
+            request_count = delta.days
 
-        if timezone_offset is not None:
-            # Convert timezone_offset from hours to seconds
-            timezone_offset = timezone_offset * 3600
-            for event in events:
-                event['properties']['time'] = int(event['properties']['time'] - timezone_offset)
+        for x in xrange(request_count + 1):
+            params_copy = deepcopy(params)
+            current_file = output_file
 
-        Mixpanel.export_data(events, output_file, format=format, compress=compress)
+            if request_per_day:
+                d = time.strptime(params['from_date'], date_format)
+                current_day = (datetime.date(d.tm_year, d.tm_mon, d.tm_mday) + datetime.timedelta(x)).strftime(
+                    date_format)
+                file_components = output_file.split('.')
+                current_file = file_components[0] + "_" + current_day
+                if len(file_components) > 1:
+                    current_file = current_file + '.' + file_components[1]
+                params_copy['from_date'] = current_day
+                params_copy['to_date'] = current_day
 
-        # If we modified the default timeout above, set it back
+            events = self.query_export(params_copy, add_gzip_header=add_gzip_header, raw_stream=raw_stream)
+
+            if raw_stream:
+                if add_gzip_header and current_file[-3:] != '.gz':
+                    current_file = current_file + '.gz'
+                with open(current_file, 'wb') as fp:
+                    shutil.copyfileobj(events, fp, buffer_size)
+            else:
+                if timezone_offset is not None:
+                    # Convert timezone_offset from hours to seconds
+                    timezone_offset = timezone_offset * 3600
+                    for event in events:
+                        event['properties']['time'] = int(event['properties']['time'] - timezone_offset)
+
+                Mixpanel.export_data(events, current_file, format=format, compress=compress)
+
+        # If we modified the default timeout above, restore default setting
         if timeout_backup == 120:
             self.timeout = timeout_backup
 
@@ -898,7 +984,6 @@ class Mixpanel(object):
 
         self._import_data(data, base_url, endpoint, ignore_alias=ignore_alias, dataset_id=self.dataset_id,
                           dataset_version=dataset_version, raw_record_import=raw_record_import)
-
 
     def list_all_dataset_versions(self):
         """Returns a list of all dataset version objects for the current dataset_id

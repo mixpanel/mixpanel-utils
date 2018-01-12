@@ -82,7 +82,7 @@ When initializing the Mixpanel class you must specify an api_secret. You may spe
 
 ###### Export events
 ```python
-export_events(output_file, params, format='json', timezone_offset=None, add_gzip_header=False,compress=False)
+export_events(output_file, params, format='json', timezone_offset=None, add_gzip_header=False, compress=False, request_per_day=False, raw_stream=False, buffer_size=1024)
 
 ```
 Example:
