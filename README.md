@@ -40,6 +40,8 @@ The mixpanel-api module is designed to allow Mixpanel users to rapidly and easil
 
 A complete API reference for this module is available here: http://mixpanel-api.readthedocs.io/
 
+Please note: At the moment this module supports Python 2 only. Python 3 is not supported.
+
 #### Installation
 
 You may install the mixpanel-api module via pip:
