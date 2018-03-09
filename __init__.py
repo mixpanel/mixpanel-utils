@@ -795,7 +795,7 @@ class Mixpanel(object):
                 return events
         else:
             Mixpanel.LOGGER.warning('/export API response empty')
-            return
+            return []
 
     def query_engage(self, params=None, timezone_offset=None):
         """Queries the /engage API and returns a list of Mixpanel People profile dicts
