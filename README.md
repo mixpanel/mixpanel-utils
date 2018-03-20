@@ -35,6 +35,7 @@
 		* [Deleting a dataset version](#deleting-a-dataset-version)
 		* [Knowing when a dataset version is ready](#knowing-when-a-dataset-version-is-ready)
 
+NOTE - for a server-side integration with our official Python Library, please refer here: https://github.com/mixpanel/mixpanel-python
 
 The mixpanel-api module is designed to allow Mixpanel users to rapidly and easily utilize our export APIs to accomplish common tasks such as people/event exports, imports, people profile transform, deletions, etc...
 
