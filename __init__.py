@@ -94,20 +94,26 @@ class Mixpanel(object):
             Mixpanel.LOGGER.setLevel(logging.WARNING)
 
     @staticmethod
-    def export_data(data, output_file, format='json', compress=False):
+    def export_data(data, output_file, append_mode=False, format='json', compress=False):
         """Writes and optionally compresses Mixpanel data to disk in json or csv format
 
         :param data: A list of Mixpanel events or People profiles, if format='json', arbitrary json can be exported
         :param output_file: Name of file to write to
+        :param append_mode: Set this to True to append data to an existing file using open() mode 'a+', uses open() mode
+            'w+' when False (Default value = False)
         :param format:  Output format can be 'json' or 'csv' (Default value = 'json')
         :param compress:  Option to gzip output (Default value = False)
         :type data: list
         :type output_file: str
+        :type append_mode: bool
         :type format: str
         :type compress: bool
 
         """
-        with open(output_file, 'w+') as output:
+        open_mode = 'w+'
+        if append_mode:
+            open_mode = 'a+'
+        with open(output_file, open_mode) as output:
             if format == 'json':
                 json.dump(data, output)
             elif format == 'csv':
@@ -275,7 +281,7 @@ class Mixpanel(object):
         if backup:
             if backup_file is None:
                 backup_file = "backup_" + str(int(time.time())) + ".json"
-            self.export_data(profiles_list, backup_file)
+            self.export_data(profiles_list, backup_file, append_mode=True)
 
         # Set the dynamic flag to True if value is a function
         dynamic = isfunction(value)
@@ -301,6 +307,7 @@ class Mixpanel(object):
         :param backup_file: Optional filename to use for the backup file (Default value = None)
         :type profiles: list | str
         :type query_params: dict
+        :type ignore_alias: bool
         :type timezone_offset: int | float
         :type backup: bool
         :type backup_file: str
@@ -630,7 +637,7 @@ class Mixpanel(object):
         if backup:
             if backup_file is None:
                 backup_file = "backup_" + str(int(time.time())) + ".json"
-            self.export_data(profiles_list, backup_file)
+            self.export_data(profiles_list, backup_file, append_mode=True)
 
         for profile in profiles_list:
             try:
@@ -1368,7 +1375,7 @@ class Mixpanel(object):
         # event to a log of invalid events and return
         if ('time' not in event['properties']) or ('distinct_id' not in event['properties']):
             Mixpanel.LOGGER.warning('Event missing time or distinct_id property, dumping to invalid_events.txt')
-            with open('invalid_events.txt', 'a') as invalid:
+            with open('invalid_events.txt', 'a+') as invalid:
                 json.dump(event, invalid)
                 invalid.write('\n')
                 return
@@ -1519,8 +1526,10 @@ class Mixpanel(object):
                 pool.apply_async(self._send_batch, args=(base_url, endpoint, batch, dataset_id, dataset_version),
                                  callback=Mixpanel._response_handler_callback)
                 batch = []
+
         # If there are fewer than batch_size updates left ensure one last call is made
         if len(batch):
+            # Add an asynchronous call to _send_batch to the thread pool
             pool.apply_async(self._send_batch, args=(base_url, endpoint, batch, dataset_id, dataset_version),
                              callback=Mixpanel._response_handler_callback)
         pool.close()
@@ -1567,7 +1576,7 @@ class Mixpanel(object):
                                      dataset_version=dataset_version, retries=retries + 1)
                 else:
                     Mixpanel.LOGGER.warning("Failed to import batch, dumping to file import_backup.txt")
-                    with open('import_backup.txt', 'a') as backup:
+                    with open('import_backup.txt', 'a+') as backup:
                         json.dump(batch, backup)
                         backup.write('\n')
             else:

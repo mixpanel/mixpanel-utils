@@ -76,7 +76,10 @@ class ConcurrentPaginator(object):
 
     def _concurrent_flatmap(self, func, iterable):
         pool = ThreadPool(processes=self.concurrency)
-        return list(itertools.chain(*pool.map(func, iterable)))
+        res = list(itertools.chain(*pool.map(func, iterable)))
+        pool.close()
+        pool.join()
+        return res
 
     def _remaining_page_range(self, response):
         num_pages = math.ceil(response['total'] / float(response['page_size']))
