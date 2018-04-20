@@ -15,7 +15,11 @@ from multiprocessing.pool import ThreadPool
 from paginator import ConcurrentPaginator
 from ast import literal_eval
 from copy import deepcopy
-import csv
+
+try:
+    import unicodecsv as csv
+except ImportError:
+    import csv
 
 try:
     import ujson as json
