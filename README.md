@@ -114,7 +114,7 @@ Example:
 ```python
 import_events('event_export.txt',timezone_offset=-8)
 ```
-Imports events using the import endpoint. The data parameter is expected to be a filename of a file containing either a CSV or JSON object or list of JSON objects (as in a raw event export) or a list of events. You must specify a timezone offset. This will be the project's timezone offset from UTC. For instance PST is -8 so in that case timezone_offset=-8 would be how you import data that was exported from a project in pacific time during PST time. The dataset_version is the parameter you must specify if you are importing events into a dataset. See the section on [importing into datasets](#importing-data-into-a-dataset) for more information.
+Imports events using the import endpoint. The data parameter is expected to be a filename of a file containing either a CSV or JSON object or list of JSON objects (as in a raw event export) or a list of events. You must specify a timezone offset. This will be the project's timezone offset from UTC. For instance PST is -8 so in that case timezone_offset=-8 would be how you import data that was exported from a project in pacific time during PST time (assuming no timezone_offset was set in the export_events call). The dataset_version is the parameter you must specify if you are importing events into a dataset. See the section on [importing into datasets](#importing-data-into-a-dataset) for more information.
 
 ###### Import people
 ```python
