@@ -634,7 +634,7 @@ class Mixpanel(object):
             This ensures that any properties that existed on the duplicates but not on the remaining profile are
             preserved. (Default value = False)
         :param case_sensitive:  Option to use case sensitive or case insensitive matching (Default value = False)
-        :param backup: True to create backup file otherwise False (default)
+        :param backup: Create a backup file (default True)
         :param backup_file: Optional filename to use for the backup file (Default value = None)
         :type profiles: list | str
         :type prop_to_match: str
