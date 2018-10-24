@@ -123,9 +123,8 @@ class Mixpanel(object):
             elif format == 'csv':
                 Mixpanel._write_items_to_csv(data, output_file)
             else:
-                msg = "Invalid format - must be 'json' or 'csv': format = " + str(format) + '\n' \
-                      + "Dumping json to " + output_file
-                Mixpanel.LOGGER.warning(msg)
+                Mixpanel.LOGGER.warning("Invalid format - must be 'json' or 'csv': format = %s\nDumping json to %s",
+                	format, output_file)
                 json.dump(data, output)
 
         if compress:
@@ -195,15 +194,15 @@ class Mixpanel(object):
                     data += '&verbose=1'
                     # Uncomment the line below to log the request body data
                     # Mixpanel.LOGGER.debug(method + ' data: ' + data)
-            Mixpanel.LOGGER.debug("Request Method: " + method)
-            Mixpanel.LOGGER.debug("Request URL: " + request_url)
+            Mixpanel.LOGGER.debug("Request Method: %s", method)
+            Mixpanel.LOGGER.debug("Request URL: %s", request_url)
 
             if headers is None:
                 headers = {}
             headers['Authorization'] = 'Basic {encoded_secret}'.format(
                 encoded_secret=base64.b64encode(self.api_secret + ':'))
             request = urllib2.Request(request_url, data, headers)
-            Mixpanel.LOGGER.debug("Request Headers: " + json.dumps(headers))
+            Mixpanel.LOGGER.debug("Request Headers: %s", json.dumps(headers))
             # This is the only way to use HTTP methods other than GET or POST with urllib2
             if method != 'GET' and method != 'POST':
                 request.get_method = lambda: method
@@ -214,21 +213,21 @@ class Mixpanel(object):
                     return response
             except urllib2.HTTPError as e:
                 Mixpanel.LOGGER.warning('The server couldn\'t fulfill the request.')
-                Mixpanel.LOGGER.warning('Error code: ' + str(e.code))
-                Mixpanel.LOGGER.warning('Reason: ' + str(e.reason))
+                Mixpanel.LOGGER.warning('Error code: %d', e.code)
+                Mixpanel.LOGGER.warning('Reason: %s', e.reason)
                 if hasattr(e, 'read'):
-                    Mixpanel.LOGGER.warning('Response: ' + e.read())
+                    Mixpanel.LOGGER.warning('Response: %s', e.read())
                 if e.code >= 500:
                     # Retry if we get an HTTP 5xx error
-                    Mixpanel.LOGGER.warning("Attempting retry #" + str(retries + 1))
+                    Mixpanel.LOGGER.warning("Attempting retry #%d", retries + 1)
                     self.request(base_url, path_components, params, method=method, headers=headers,
                                  raw_stream=raw_stream, retries=retries + 1)
             except urllib2.URLError as e:
                 Mixpanel.LOGGER.warning('We failed to reach a server.')
-                Mixpanel.LOGGER.warning('Reason: ' + str(e.reason))
+                Mixpanel.LOGGER.warning('Reason: %s', e.reason)
                 if hasattr(e, 'read'):
-                    Mixpanel.LOGGER.warning('Response: ' + e.read())
-                Mixpanel.LOGGER.warning("Attempting retry #" + str(retries + 1))
+                    Mixpanel.LOGGER.warning('Response: %s', e.read())
+                Mixpanel.LOGGER.warning("Attempting retry #%d", retries + 1)
                 self.request(base_url, path_components, params, method=method, headers=headers, raw_stream=raw_stream,
                              retries=retries + 1)
             except SSLError as e:
@@ -236,7 +235,7 @@ class Mixpanel(object):
                     Mixpanel.LOGGER.warning('The read operation timed out.')
                     self.timeout = self.timeout + 30
                     Mixpanel.LOGGER.warning(
-                        'Increasing timeout to ' + str(self.timeout) + ' and attempting retry #' + str(retries + 1))
+                        'Increasing timeout to %d and attempting retry #%d', self.timeout, retries + 1)
                     self.request(base_url, path_components, params, method=method, headers=headers,
                                  raw_stream=raw_stream, retries=retries + 1)
                 else:
@@ -253,7 +252,7 @@ class Mixpanel(object):
                         response_data = response.read()
                     return response_data
                 except IncompleteRead as e:
-                    Mixpanel.LOGGER.warning("Response data is incomplete. Attempting retry #" + str(retries + 1))
+                    Mixpanel.LOGGER.warning("Response data is incomplete. Attempting retry #%d", (retries + 1))
                     self.request(base_url, path_components, params, method=method, headers=headers,
                                  raw_stream=raw_stream, retries=retries + 1)
         else:
@@ -303,7 +302,8 @@ class Mixpanel(object):
 
         if backup:
             if backup_file is None:
-                backup_file = "backup_" + str(int(time.time())) + ".json"
+                backup_file = "backup_{:.0f}.json".format(time.time())
+
             self.export_data(profiles_list, backup_file, append_mode=True)
 
         # Set the dynamic flag to True if value is a function
@@ -313,7 +313,7 @@ class Mixpanel(object):
                                [{}, self.token, operation, value, ignore_alias, dynamic])
 
         profile_count = len(profiles_list)
-        Mixpanel.LOGGER.debug(operation + ' operation applied to ' + str(profile_count) + ' profiles')
+        Mixpanel.LOGGER.debug('%s operation applied to %d profiles', operation, profile_count)
         return profile_count
 
     def people_delete(self, profiles=None, query_params=None, timezone_offset=None, ignore_alias=True, backup=True,
@@ -654,12 +654,12 @@ class Mixpanel(object):
             profiles_list = Mixpanel._list_from_argument(profiles)
         else:
             # Unless the user provides a list of profiles we only look at profiles which have the prop_to_match set
-            selector = '(boolean(properties["' + prop_to_match + '"]) == true)'
+            selector = '(boolean(properties["{}"]) == true)'.format(prop_to_match)
             profiles_list = self.query_engage({'where': selector})
 
         if backup:
             if backup_file is None:
-                backup_file = "backup_" + str(int(time.time())) + ".json"
+                backup_file = "backup_{:.0f}.json".format(time.time())
             self.export_data(profiles_list, backup_file, append_mode=True)
 
         for profile in profiles_list:
@@ -765,7 +765,7 @@ class Mixpanel(object):
 
         if backup:
             if backup_file is None:
-                backup_file = "backup_" + str(int(time.time())) + ".json"
+                backup_file = "backup_{:.0f}.json".format(time.time())
             # backs up ALL profiles, not just those affected by the JQL since jql_data might not contain full profiles
             self.export_people(backup_file)
 
@@ -1166,11 +1166,11 @@ class Mixpanel(object):
         if 'state' in version:
             writable = version['state']['writable']
             state = {'writable': writable, 'readable': True}
-            Mixpanel.LOGGER.debug('Updating state with: ' + str(state))
+            Mixpanel.LOGGER.debug('Updating state with: %s', state)
             self.update_dataset_version(version_id, state)
         else:
-            Mixpanel.LOGGER.warning('Failed to get dataset version object for version_id ' + str(
-                version_id) + 'of dataset ' + self.dataset_id)
+            Mixpanel.LOGGER.warning('Failed to get dataset version object for version_id %d of dataset %d',
+            	version_id, self.dataset_id)
             return False
 
     def delete_dataset_version(self, version_id):
@@ -1219,10 +1219,10 @@ class Mixpanel(object):
             attempt = attempt + 1
             if 'state' in version:
                 ready = version['state']['ready']
-                Mixpanel.LOGGER.debug('Attempt #' + str(attempt) + ': ready = ' + str(ready))
+                Mixpanel.LOGGER.debug('Attempt #%d: ready = %s', attempt, ready)
             else:
-                Mixpanel.LOGGER.warning('Failed to get dataset version object for version_id ' + str(
-                    version_id) + 'of dataset ' + self.dataset_id)
+                Mixpanel.LOGGER.warning('Failed to get dataset version object for version_id %d of dataset %d',
+                	version_id, self.dataset_id)
                 return False
 
         return True
@@ -1261,9 +1261,9 @@ class Mixpanel(object):
         """
         response_data = json.loads(response)
         if ('status' in response_data and response_data['status'] != 1) or ('status' not in response_data):
-            Mixpanel.LOGGER.warning("Bad API response: " + response)
+            Mixpanel.LOGGER.warning("Bad API response: %s", response)
             raise RuntimeError('Import or Update Failed')
-        Mixpanel.LOGGER.debug("API Response: " + response)
+        Mixpanel.LOGGER.debug("API Response: %s", response)
 
     @staticmethod
     def _write_items_to_csv(items, output_file):
@@ -1470,7 +1470,7 @@ class Mixpanel(object):
                         item_list.append(json.loads(item))
 
         except IOError:
-            Mixpanel.LOGGER.warning("Error loading data from file: " + filename)
+            Mixpanel.LOGGER.warning("Error loading data from file: %s", filename)
 
         return item_list
 
@@ -1609,7 +1609,7 @@ class Mixpanel(object):
                 Mixpanel._gzip_file(output_file)
                 os.remove(output_file)
         else:
-            Mixpanel.LOGGER.warning('Invalid format must be either json or csv, got: ' + format)
+            Mixpanel.LOGGER.warning('Invalid format must be either json or csv, got: %s', format)
             return
 
     def _get_engage_page(self, params):
@@ -1626,7 +1626,7 @@ class Mixpanel(object):
         if 'results' in data:
             return data
         else:
-            Mixpanel.LOGGER.warning("Invalid response from /engage: " + response)
+            Mixpanel.LOGGER.warning("Invalid response from /engage: %s", response)
             return
 
     def _dispatch_batches(self, base_url, endpoint, item_list, prep_args, dataset_id=None, dataset_version=None):
@@ -1659,7 +1659,7 @@ class Mixpanel(object):
             prep_function = Mixpanel._prep_params_for_profile
         else:
             Mixpanel.LOGGER.warning(
-                'endpoint must be "import", "engage", "import-events" or "import-people", found: ' + str(endpoint))
+                'endpoint must be "import", "engage", "import-events" or "import-people", found: %s', endpoint)
             return
 
         if base_url == self.BETA_IMPORT_API:
@@ -1719,8 +1719,7 @@ class Mixpanel(object):
             if dataset_version:
                 params['dataset_version'] = dataset_version
             response = self.request(base_url, [endpoint], params, 'POST')
-            msg = "Sent " + str(len(batch)) + " items on " + time.strftime("%Y-%m-%d %H:%M:%S") + "!"
-            Mixpanel.LOGGER.debug(msg)
+            Mixpanel.LOGGER.debug("Sent %d items on %s!", len(batch), time.strftime("%Y-%m-%d %H:%M:%S"))
             return response
         except BaseException:
             Mixpanel.LOGGER.warning("Failed to import batch, dumping to file import_backup.txt")
@@ -1822,7 +1821,7 @@ class Mixpanel(object):
                 pass
             else:
                 Mixpanel.LOGGER.warning(
-                    'Invalid type for event_selectors, must be dict or list, found: ' + str(type(event_selectors)))
+                    'Invalid type for event_selectors, must be dict or list, found: %s', type(event_selectors))
 
             params = {'from_date': from_date, 'to_date': to_date, 'event_selectors': event_selectors,
                       'timezone_offset': timezone_offset}
@@ -1841,12 +1840,12 @@ class Mixpanel(object):
                 pass
             else:
                 Mixpanel.LOGGER.warning(
-                    'Invalid type for user_selectors, must be str or list, found: ' + str(type(user_selectors)))
+                    'Invalid type for user_selectors, must be str or list, found: %s', type(user_selectors))
                 return
 
             params = {'user_selectors': user_selectors}
         else:
-            Mixpanel.LOGGER.warning('Invalid data_type, must be "events" or "people", found: ' + data_type)
+            Mixpanel.LOGGER.warning('Invalid data_type, must be "events" or "people", found: %s', data_type)
             return
 
         if output_properties is not None:
@@ -1887,7 +1886,7 @@ class Mixpanel(object):
         if state is not None:
             arguments['state'] = json.dumps(state)
         response = self.request(self.BETA_IMPORT_API, path, arguments, method=method)
-        Mixpanel.LOGGER.debug('Response: ' + response)
+        Mixpanel.LOGGER.debug('Response: %s', response)
         json_response = json.loads(response)
         if 'error' not in response:
             if 'data' in response:
@@ -1897,8 +1896,8 @@ class Mixpanel(object):
                 else:
                     return data
             else:
-                Mixpanel.LOGGER.warning("Response doesn't contain a data key, got: " + str(response))
+                Mixpanel.LOGGER.warning("Response doesn't contain a data key, got: %s", response)
                 return False
         else:
-            Mixpanel.LOGGER.warning('Dataset operation error: ' + response['error'])
+            Mixpanel.LOGGER.warning('Dataset operation error: %s', response['error'])
             return False
