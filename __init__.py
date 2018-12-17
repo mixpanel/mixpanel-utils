@@ -221,24 +221,24 @@ class Mixpanel(object):
                 if e.code >= 500:
                     # Retry if we get an HTTP 5xx error
                     Mixpanel.LOGGER.warning("Attempting retry #" + str(retries + 1))
-                    self.request(base_url, path_components, params, method=method, headers=headers,
-                                 raw_stream=raw_stream, retries=retries + 1)
+                    return self.request(base_url, path_components, params, method=method, headers=headers,
+                                        raw_stream=raw_stream, retries=retries + 1)
             except urllib2.URLError as e:
                 Mixpanel.LOGGER.warning('We failed to reach a server.')
                 Mixpanel.LOGGER.warning('Reason: ' + str(e.reason))
                 if hasattr(e, 'read'):
                     Mixpanel.LOGGER.warning('Response: ' + e.read())
                 Mixpanel.LOGGER.warning("Attempting retry #" + str(retries + 1))
-                self.request(base_url, path_components, params, method=method, headers=headers, raw_stream=raw_stream,
-                             retries=retries + 1)
+                return self.request(base_url, path_components, params, method=method, headers=headers,
+                                    raw_stream=raw_stream, retries=retries + 1)
             except SSLError as e:
                 if e.message == 'The read operation timed out':
                     Mixpanel.LOGGER.warning('The read operation timed out.')
                     self.timeout = self.timeout + 30
                     Mixpanel.LOGGER.warning(
                         'Increasing timeout to ' + str(self.timeout) + ' and attempting retry #' + str(retries + 1))
-                    self.request(base_url, path_components, params, method=method, headers=headers,
-                                 raw_stream=raw_stream, retries=retries + 1)
+                    return self.request(base_url, path_components, params, method=method, headers=headers,
+                                        raw_stream=raw_stream, retries=retries + 1)
                 else:
                     raise
 
@@ -254,8 +254,8 @@ class Mixpanel(object):
                     return response_data
                 except IncompleteRead as e:
                     Mixpanel.LOGGER.warning("Response data is incomplete. Attempting retry #" + str(retries + 1))
-                    self.request(base_url, path_components, params, method=method, headers=headers,
-                                 raw_stream=raw_stream, retries=retries + 1)
+                    return self.request(base_url, path_components, params, method=method, headers=headers,
+                                        raw_stream=raw_stream, retries=retries + 1)
         else:
             Mixpanel.LOGGER.warning("Maximum retries reached. Request failed. Try again later.")
             raise BaseException
@@ -1251,18 +1251,20 @@ class Mixpanel(object):
         return result
 
     @staticmethod
-    def _response_handler_callback(response):
+    def _async_response_handler_callback(response):
         """Takes a Mixpanel API response and checks the status
+
+        Logs a warning message if status is not equal to 1.
+        *Does not* raise an exception on error: if a callback in a ThreadPool apply_async
+        call throws an exception the pool will hang indefinitely
 
         :param response: A Mixpanel API JSON response
         :type response: str
-        :raises RuntimeError: Raises RuntimeError if status is not equal to 1
 
         """
         response_data = json.loads(response)
         if ('status' in response_data and response_data['status'] != 1) or ('status' not in response_data):
             Mixpanel.LOGGER.warning("Bad API response: " + response)
-            raise RuntimeError('Import or Update Failed')
         Mixpanel.LOGGER.debug("API Response: " + response)
 
     @staticmethod
@@ -1680,14 +1682,14 @@ class Mixpanel(object):
             if len(batch) == batch_size:
                 # Add an asynchronous call to _send_batch to the thread pool
                 pool.apply_async(self._send_batch, args=(base_url, endpoint, batch, dataset_id, dataset_version),
-                                 callback=Mixpanel._response_handler_callback)
+                                 callback=Mixpanel._async_response_handler_callback)
                 batch = []
 
         # If there are fewer than batch_size updates left ensure one last call is made
         if len(batch):
             # Add an asynchronous call to _send_batch to the thread pool
             pool.apply_async(self._send_batch, args=(base_url, endpoint, batch, dataset_id, dataset_version),
-                             callback=Mixpanel._response_handler_callback)
+                             callback=Mixpanel._async_response_handler_callback)
         pool.close()
         pool.join()
 
