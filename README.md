@@ -311,6 +311,7 @@ Note: If you are importing events that did not come from a Mixpanel export and t
 Example:
 ```python
 dataset.import_events('new_events',dataset_version=latest_version_id,timezone_offset=0)
+```
 
 ##### Dataset versions
 
