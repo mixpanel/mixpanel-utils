@@ -1483,8 +1483,9 @@ class Mixpanel(object):
 
         """
         gzip_filename = filename + '.gz'
-        with open(filename, 'rb') as f_in, gzip.open(gzip_filename, 'wb') as f_out:
-            shutil.copyfileobj(f_in, f_out)
+        with open(filename, 'rb') as f_in:
+            gzip.open(gzip_filename, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
 
     @staticmethod
     def _prep_event_for_import(event, token, timezone_offset):
