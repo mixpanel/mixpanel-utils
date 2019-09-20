@@ -655,7 +655,7 @@ class Mixpanel(object):
         else:
             # Unless the user provides a list of profiles we only look at profiles which have the prop_to_match set
             selector = '(boolean(properties["' + prop_to_match + '"]) == true)'
-            profiles_list = self.query_engage({'where': selector})
+            profiles_list = self.query_engage({'where': selector}, params={'output_properties': [prop_to_match])
 
         if backup:
             if backup_file is None:
