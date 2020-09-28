@@ -222,6 +222,8 @@ class Mixpanel(object):
                     Mixpanel.LOGGER.warning("Attempting retry #%d", retries + 1)
                     return self.request(base_url, path_components, params, method=method, headers=headers,
                                  raw_stream=raw_stream, retries=retries + 1)
+                else:
+                    raise
 
             except urllib2.URLError as e:
                 Mixpanel.LOGGER.warning('We failed to reach a server.')
