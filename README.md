@@ -75,13 +75,15 @@ These are functions that should allow you to complete a number of tasks with min
 
 ###### Initialization
 ```python
-__init__(api_secret, token=None, dataset_id=None, timeout=120, pool_size=None, read_pool_size=None, max_retries=10, debug=False)
+__init__(api_secret, token=None, dataset_id=None, timeout=120, pool_size=None, read_pool_size=None, max_retries=10, debug=False, eu=False)
 ```
 Example:
 ```python
 Mixpanel('secrethere',token='tokenhere')
 ```
 When initializing the Mixpanel class you must specify an api_secret. You may specify a token (this is required if you are importing). You may also specify timeouts for request queries (in seconds), the number of CPU cores to use with pool_size (defaults to all), the maximum number of simultaneous read connections to make with read_pool_size, and the maximum number of retries an import will attempt at a time before giving up.
+
+If your project participates in EU residency, you should specify `eu=True` when initializing.
 
 ###### Export events
 ```python
