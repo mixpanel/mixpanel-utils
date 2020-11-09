@@ -38,9 +38,6 @@ class Mixpanel(object):
     """An object for querying, importing, exporting and modifying Mixpanel data via their various APIs
 
     """
-    FORMATTED_API = 'https://mixpanel.com/api'
-    RAW_API = 'https://data.mixpanel.com/api'
-    IMPORT_API = 'https://api.mixpanel.com'
     BETA_IMPORT_API = 'https://api-beta.mixpanel.com'
     VERSION = '2.0'
     LOGGER = logging.getLogger(__name__)
@@ -55,7 +52,7 @@ class Mixpanel(object):
     """
 
     def __init__(self, api_secret, token=None, dataset_id=None, timeout=120, pool_size=None,
-                 read_pool_size=2, max_retries=4, debug=False):
+                 read_pool_size=2, max_retries=4, debug=False, eu=False):
         """Initializes the Mixpanel object
 
         :param api_secret: API Secret for your project
@@ -67,6 +64,7 @@ class Mixpanel(object):
             (Default value = 2)
         :param max_retries: Maximum number of times to retry when a 5xx HTTP response is received (Default value = 4)
         :param debug: Enable debug logging
+        :param eu: Is the project participating in EU residency
         :type api_secret: str
         :type token: str
         :type dataset_id: str
@@ -75,6 +73,7 @@ class Mixpanel(object):
         :type read_pool_size: int
         :type max_retries: int
         :type debug: bool
+        :type eu: bool
 
         """
 
@@ -88,6 +87,10 @@ class Mixpanel(object):
         self.pool_size = pool_size
         self.read_pool_size = read_pool_size
         self.max_retries = max_retries
+        self.eu = eu
+        self.raw_api = "https://data.mixpanel.com/api" if eu is False else "https://data-eu.mixpanel.com/api"
+        self.import_api = "https://api.mixpanel.com" if eu is False else "https://api-eu.mixpanel.com"
+        self.formatted_api = "https://mixpanel.com/api" if eu is False else "https://eu.mixpanel.com/api"
         log_level = Mixpanel.LOGGER.getEffectiveLevel()
         ''' The logger is a singleton for the Mixpanel class, so multiple instances of the Mixpanel class will use the
         same logger instance. Subsequent instances can upgrade the logging level to debug but they cannot downgrade it.
@@ -160,7 +163,7 @@ class Mixpanel(object):
         :param method: HTTP method verb: 'GET', 'POST', 'PUT', 'DELETE', 'PATCH'
         :param headers: HTTP request headers dict (Default value = None)
         :param raw_stream: Return the raw file-like response directly from urlopen, only works when base_url is
-            Mixpanel.RAW_API
+            self.raw_api
         :param retries: number of times the request has been retried (Default value = 0)
         :type base_url: str
         :type path_components: list
@@ -175,7 +178,7 @@ class Mixpanel(object):
         """
         if retries < self.max_retries:
             # Add API version to url path if needed
-            if base_url == Mixpanel.IMPORT_API or base_url == Mixpanel.BETA_IMPORT_API:
+            if base_url == self.import_api or base_url == Mixpanel.BETA_IMPORT_API:
                 base = [base_url]
             else:
                 base = [base_url, str(Mixpanel.VERSION)]
@@ -190,7 +193,7 @@ class Mixpanel(object):
                 request_url += '?' + encoded_params
             else:
                 data = encoded_params
-                if base_url == self.IMPORT_API or 'import-people' in path_components or 'import-events' in path_components:
+                if base_url == self.import_api or 'import-people' in path_components or 'import-events' in path_components:
                     data += '&verbose=1'
                     # Uncomment the line below to log the request body data
                     # Mixpanel.LOGGER.debug(method + ' data: ' + data)
@@ -209,7 +212,7 @@ class Mixpanel(object):
 
             try:
                 response = urllib2.urlopen(request, timeout=self.timeout)
-                if raw_stream and base_url == Mixpanel.RAW_API:
+                if raw_stream and base_url == self.raw_api:
                     return response
             except urllib2.HTTPError as e:
                 Mixpanel.LOGGER.warning('The server couldn\'t fulfill the request.')
@@ -312,7 +315,7 @@ class Mixpanel(object):
         # Set the dynamic flag to True if value is a function
         dynamic = isfunction(value)
 
-        self._dispatch_batches(self.IMPORT_API, 'engage', profiles_list,
+        self._dispatch_batches(self.import_api, 'engage', profiles_list,
                                [{}, self.token, operation, value, ignore_alias, dynamic])
 
         profile_count = len(profiles_list)
@@ -730,7 +733,7 @@ class Mixpanel(object):
         if params is not None:
             query_params["params"] = json.dumps(params)
 
-        response = self.request(Mixpanel.FORMATTED_API, ['jql'], query_params, method='POST')
+        response = self.request(self.formatted_api, ['jql'], query_params, method='POST')
         if format == 'json':
             return json.loads(response)
         else:
@@ -909,7 +912,7 @@ class Mixpanel(object):
         headers = {}
         if add_gzip_header:
             headers = {'Accept-encoding': 'gzip'}
-        response = self.request(Mixpanel.RAW_API, ['export'], params, headers=headers, raw_stream=raw_stream)
+        response = self.request(self.raw_api, ['export'], params, headers=headers, raw_stream=raw_stream)
         if response != '':
             if raw_stream:
                 return response
@@ -1080,7 +1083,7 @@ class Mixpanel(object):
                 return
         else:
             endpoint = 'import'
-            base_url = self.IMPORT_API
+            base_url = self.import_api
 
         self._import_data(data, base_url, endpoint, timezone_offset=timezone_offset, dataset_id=self.dataset_id,
                           dataset_version=dataset_version)
@@ -1111,7 +1114,7 @@ class Mixpanel(object):
                 return
         else:
             endpoint = 'engage'
-            base_url = self.IMPORT_API
+            base_url = self.import_api
 
         self._import_data(data, base_url, endpoint, ignore_alias=ignore_alias, dataset_id=self.dataset_id,
                           dataset_version=dataset_version, raw_record_import=raw_record_import)
@@ -1626,7 +1629,7 @@ class Mixpanel(object):
         :rtype: dict
 
         """
-        response = self.request(Mixpanel.FORMATTED_API, ['engage'], params)
+        response = self.request(self.formatted_api, ['engage'], params)
         data = json.loads(response)
         if 'results' in data:
             return data
