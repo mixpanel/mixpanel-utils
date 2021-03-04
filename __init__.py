@@ -1,9 +1,9 @@
 import base64
-import urllib  # for url encoding
-import urllib2  # for sending requests
-from httplib import IncompleteRead
+import urllib.request, urllib.parse, urllib.error  # for url encoding
+import urllib.request, urllib.error, urllib.parse  # for sending requests
+from http.client import IncompleteRead
 from ssl import SSLError
-import cStringIO
+import io
 import logging
 import gzip
 import shutil
@@ -13,7 +13,7 @@ import datetime
 from inspect import isfunction
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
-from paginator import ConcurrentPaginator
+from .paginator import ConcurrentPaginator
 from ast import literal_eval
 from copy import deepcopy
 
@@ -204,17 +204,17 @@ class Mixpanel(object):
                 headers = {}
             headers['Authorization'] = 'Basic {encoded_secret}'.format(
                 encoded_secret=base64.b64encode(self.api_secret + ':'))
-            request = urllib2.Request(request_url, data, headers)
+            request = urllib.request.Request(request_url, data, headers)
             Mixpanel.LOGGER.debug("Request Headers: %s", json.dumps(headers))
             # This is the only way to use HTTP methods other than GET or POST with urllib2
             if method != 'GET' and method != 'POST':
                 request.get_method = lambda: method
 
             try:
-                response = urllib2.urlopen(request, timeout=self.timeout)
+                response = urllib.request.urlopen(request, timeout=self.timeout)
                 if raw_stream and base_url == self.raw_api:
                     return response
-            except urllib2.HTTPError as e:
+            except urllib.error.HTTPError as e:
                 Mixpanel.LOGGER.warning('The server couldn\'t fulfill the request.')
                 Mixpanel.LOGGER.warning('Error code: %d', e.code)
                 Mixpanel.LOGGER.warning('Reason: %s', e.reason)
@@ -228,7 +228,7 @@ class Mixpanel(object):
                 else:
                     raise
 
-            except urllib2.URLError as e:
+            except urllib.error.URLError as e:
                 Mixpanel.LOGGER.warning('We failed to reach a server.')
                 Mixpanel.LOGGER.warning('Reason: %s', e.reason)
                 if hasattr(e, 'read'):
@@ -251,7 +251,7 @@ class Mixpanel(object):
                 try:
                     # If the response is gzipped we go ahead and decompress
                     if response.info().get('Content-Encoding') == 'gzip':
-                        buf = cStringIO.StringIO(response.read())
+                        buf = io.StringIO(response.read())
                         f = gzip.GzipFile(fileobj=buf)
                         response_data = f.read()
                     else:
@@ -689,14 +689,14 @@ class Mixpanel(object):
             # Append each profile to the array under the key corresponding to the value it has for prop we are matching
             main_reference[match_prop].append(profile)
 
-        for matching_prop, matching_profiles in main_reference.iteritems():
+        for matching_prop, matching_profiles in main_reference.items():
             if len(matching_profiles) > 1:
                 matching_profiles.sort(key=lambda dupe: Mixpanel._dt_from_iso(dupe))
                 # We create a $delete update for each duplicate profile and at the same time create a
                 # $set_once update for the keeper profile by working through duplicates oldest to newest
                 if merge_props:
                     prop_update = {"$distinct_id": matching_profiles[-1]["$distinct_id"], "$properties": {}}
-                for x in xrange(len(matching_profiles) - 1):
+                for x in range(len(matching_profiles) - 1):
                     delete_profiles.append({'$distinct_id': matching_profiles[x]['$distinct_id']})
                     if merge_props:
                         prop_update["$properties"].update(matching_profiles[x]["$properties"])
@@ -918,7 +918,7 @@ class Mixpanel(object):
                 return response
             else:
                 try:
-                    file_like_object = cStringIO.StringIO(response.strip())
+                    file_like_object = io.StringIO(response.strip())
                 except TypeError as e:
                     Mixpanel.LOGGER.warning('Error querying /export API')
                     return
@@ -999,7 +999,7 @@ class Mixpanel(object):
             delta = t - f
             request_count = delta.days
 
-        for x in xrange(request_count + 1):
+        for x in range(request_count + 1):
             params_copy = deepcopy(params)
             current_file = output_file
 
@@ -1248,12 +1248,12 @@ class Mixpanel(object):
 
         """
         if isinstance(params, dict):
-            params = params.items()
+            params = list(params.items())
         for i, param in enumerate(params):
             if isinstance(param[1], list):
                 params[i] = (param[0], json.dumps(param[1]),)
 
-        result = urllib.urlencode([(k, isinstance(v, unicode) and v.encode('utf-8') or v) for k, v in params])
+        result = urllib.parse.urlencode([(k, isinstance(v, str) and v.encode('utf-8') or v) for k, v in params])
         return result
 
     @staticmethod
@@ -1295,7 +1295,7 @@ class Mixpanel(object):
             Mixpanel.LOGGER.warning('No data to write!')
             return
 
-        columns = [item[props_key].keys() for item in items]
+        columns = [list(item[props_key].keys()) for item in items]
         subkeys = set([column for props in columns for column in props])
         subkeys = sorted(subkeys)
 
@@ -1421,7 +1421,7 @@ class Mixpanel(object):
 
         """
         item_list = []
-        if isinstance(arg, basestring):
+        if isinstance(arg, str):
             item_list = Mixpanel._list_from_items_filename(arg)
         elif isinstance(arg, list):
             item_list = arg
@@ -1450,7 +1450,7 @@ class Mixpanel(object):
                 # Based on the error message, try to treat it as CSV
                 with open(filename, 'rbU') as item_file:
                     reader = csv.reader(item_file, )
-                    header = reader.next()
+                    header = next(reader)
                     # Determine if the data is events or profiles based on keys in the header.
                     # NOTE: this will fail if it were profile data with a people property named 'event'
                     if 'event' in header:
@@ -1842,7 +1842,7 @@ class Mixpanel(object):
 
             if user_selectors is None:
                 user_selectors = []
-            elif isinstance(user_selectors, basestring):
+            elif isinstance(user_selectors, str):
                 user_selectors = [{'selector': user_selectors}]
             elif isinstance(user_selectors, list):
                 pass
