@@ -1,26 +1,25 @@
 import base64
-import urllib.request, urllib.parse, urllib.error  # for url encoding
-import urllib.request, urllib.error, urllib.parse  # for sending requests
-from http.client import IncompleteRead
-from ssl import SSLError
+import csv
+import datetime
+import gzip
 import io
 import logging
-import gzip
+import os
 import shutil
 import time
-import os
-import datetime
-from inspect import isfunction
-from multiprocessing import cpu_count
-from multiprocessing.pool import ThreadPool
-from .paginator import ConcurrentPaginator
+import urllib.error
+import urllib.parse
+import urllib.request
 from ast import literal_eval
 from copy import deepcopy
+from http.client import IncompleteRead
+from inspect import isfunction
+from json.decoder import JSONDecodeError
+from multiprocessing import cpu_count
+from multiprocessing.pool import ThreadPool
+from ssl import SSLError
 
-try:
-    import unicodecsv as csv
-except ImportError:
-    import csv
+from .paginator import ConcurrentPaginator
 
 try:
     import ujson as json
@@ -132,7 +131,6 @@ class Mixpanel(object):
 
         if compress:
             Mixpanel._gzip_file(output_file)
-            os.remove(output_file)
 
     @staticmethod
     def sum_transactions(profile):
@@ -195,15 +193,16 @@ class Mixpanel(object):
                 data = encoded_params
                 if base_url == self.import_api or 'import-people' in path_components or 'import-events' in path_components:
                     data += '&verbose=1'
+                    data = data.encode('utf-8')
                     # Uncomment the line below to log the request body data
-                    # Mixpanel.LOGGER.debug(method + ' data: ' + data)
+                    # Mixpanel.LOGGER.debug(method + ' data: ' + data.decode('utf-8'))
             Mixpanel.LOGGER.debug("Request Method: %s", method)
             Mixpanel.LOGGER.debug("Request URL: %s", request_url)
 
             if headers is None:
                 headers = {}
             headers['Authorization'] = 'Basic {encoded_secret}'.format(
-                encoded_secret=base64.b64encode(self.api_secret + ':'))
+                encoded_secret=base64.b64encode('{}:'.format(self.api_secret).encode('utf-8')).decode('utf-8'))
             request = urllib.request.Request(request_url, data, headers)
             Mixpanel.LOGGER.debug("Request Headers: %s", json.dumps(headers))
             # This is the only way to use HTTP methods other than GET or POST with urllib2
@@ -251,12 +250,10 @@ class Mixpanel(object):
                 try:
                     # If the response is gzipped we go ahead and decompress
                     if response.info().get('Content-Encoding') == 'gzip':
-                        buf = io.StringIO(response.read())
-                        f = gzip.GzipFile(fileobj=buf)
-                        response_data = f.read()
+                        response_data = gzip.decompress(response.read())
                     else:
                         response_data = response.read()
-                    return response_data
+                    return response_data.decode('utf-8')
                 except IncompleteRead as e:
                     Mixpanel.LOGGER.warning("Response data is incomplete. Attempting retry #%d", (retries + 1))
                     return self.request(base_url, path_components, params, method=method, headers=headers,
@@ -921,6 +918,7 @@ class Mixpanel(object):
                     file_like_object = io.StringIO(response.strip())
                 except TypeError as e:
                     Mixpanel.LOGGER.warning('Error querying /export API')
+                    Mixpanel.LOGGER.error(e)
                     return
                 raw_data = file_like_object.getvalue().split('\n')
                 events = []
@@ -991,9 +989,9 @@ class Mixpanel(object):
         if self.timeout == 120:
             self.timeout = 1200
 
+        date_format = '%Y-%m-%d'
         request_count = 0
         if request_per_day:
-            date_format = '%Y-%m-%d'
             f = datetime.datetime.strptime(params['from_date'], date_format)
             t = datetime.datetime.strptime(params['to_date'], date_format)
             delta = t - f
@@ -1021,6 +1019,8 @@ class Mixpanel(object):
                     current_file = current_file + '.gz'
                 with open(current_file, 'wb') as fp:
                     shutil.copyfileobj(events, fp, buffer_size)
+                if not add_gzip_header and compress:
+                    Mixpanel._gzip_file(current_file)
             else:
                 if timezone_offset is not None:
                     # Convert timezone_offset from hours to seconds
@@ -1302,7 +1302,7 @@ class Mixpanel(object):
         # Create the header
         header = [initial_header_value]
         for key in subkeys:
-            header.append(key.encode('utf-8'))
+            header.append(key)
 
         # Create the writer and write the header
         with open(output_file, 'w') as output:
@@ -1313,15 +1313,17 @@ class Mixpanel(object):
             for item in items:
                 row = []
                 try:
-                    row.append((item[initial_header_value]).encode('utf-8'))
+                    row.append((item[initial_header_value]))
                 except KeyError:
                     row.append('')
 
                 for subkey in subkeys:
                     try:
-                        row.append((item[props_key][subkey]).encode('utf-8'))
-                    except AttributeError:
-                        row.append(item[props_key][subkey])
+                        field = item[props_key][subkey]
+                        if not isinstance(field, (list, dict)):
+                            row.append(field)
+                        else:
+                            row.append(json.dumps(field))
                     except KeyError:
                         row.append('')
                 writer.writerow(row)
@@ -1350,7 +1352,10 @@ class Mixpanel(object):
             else:
                 try:
                     # We use literal_eval() here to de-stringify numbers, lists and objects in the CSV data
-                    p = literal_eval(row[x])
+                    # p = literal_eval(row[x])
+                    p = json.loads(row[x])
+                    if isinstance(p, list):
+                        Mixpanel.LOGGER.debug(str(p))
                     props[prop] = p
                 except (SyntaxError, ValueError) as e:
                     props[prop] = row[x]
@@ -1445,11 +1450,11 @@ class Mixpanel(object):
             with open(filename, 'rbU') as item_file:
                 # First try loading it as a JSON list
                 item_list = json.load(item_file)
-        except ValueError as e:
-            if e.message == 'No JSON object could be decoded':
+        except JSONDecodeError as e:
+            if 'Expecting value' in str(e):
                 # Based on the error message, try to treat it as CSV
-                with open(filename, 'rbU') as item_file:
-                    reader = csv.reader(item_file, )
+                with open(filename, 'rU') as item_file:
+                    reader = csv.reader(item_file)
                     header = next(reader)
                     # Determine if the data is events or profiles based on keys in the header.
                     # NOTE: this will fail if it were profile data with a people property named 'event'
@@ -1476,7 +1481,6 @@ class Mixpanel(object):
                 with open(filename, 'rbU') as item_file:
                     for item in item_file:
                         item_list.append(json.loads(item))
-
         except IOError:
             Mixpanel.LOGGER.warning("Error loading data from file: %s", filename)
 
@@ -1490,9 +1494,16 @@ class Mixpanel(object):
         :type filename: str
 
         """
-        gzip_filename = filename + '.gz'
-        with open(filename, 'rb') as f_in, gzip.open(gzip_filename, 'wb') as f_out:
-            shutil.copyfileobj(f_in, f_out)
+        gzip_filename = filename
+        remove = False
+        if filename[-3:] != '.gz':
+            gzip_filename = filename + '.gz'
+            remove = True
+        with open(filename, 'rb') as f_in:
+            with gzip.open(gzip_filename, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+        if remove:
+            os.remove(filename)
 
     @staticmethod
     def _prep_event_for_import(event, token, timezone_offset):
@@ -1615,7 +1626,6 @@ class Mixpanel(object):
                 f.write(items)
             if compress:
                 Mixpanel._gzip_file(output_file)
-                os.remove(output_file)
         else:
             Mixpanel.LOGGER.warning('Invalid format must be either json or csv, got: %s', format)
             return
@@ -1720,7 +1730,7 @@ class Mixpanel(object):
 
         """
         try:
-            params = {'data': base64.b64encode(json.dumps(batch))}
+            params = {'data': base64.b64encode(json.dumps(batch).encode('utf-8'))}
             if dataset_id:
                 params['dataset_id'] = dataset_id
                 params['token'] = self.token
@@ -1730,7 +1740,7 @@ class Mixpanel(object):
             Mixpanel.LOGGER.debug("Sent %d items on %s!", len(batch), time.strftime("%Y-%m-%d %H:%M:%S"))
             return response
         except BaseException:
-            Mixpanel.LOGGER.warning("Failed to import batch, dumping to file import_backup.txt")
+            Mixpanel.LOGGER.error("Failed to import batch, dumping to file import_backup.txt", exc_info=True)
             with open('import_backup.txt', 'a+') as backup:
                 json.dump(batch, backup)
                 backup.write('\n')
