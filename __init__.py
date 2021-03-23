@@ -35,7 +35,6 @@ except ImportError:
 class Mixpanel(object):
     """An object for querying, importing, exporting and modifying Mixpanel data via their various APIs"""
 
-    BETA_IMPORT_API = "https://api-beta.mixpanel.com"
     VERSION = "2.0"
     LOGGER = logging.getLogger(__name__)
     LOGGER.setLevel(logging.WARNING)
@@ -200,7 +199,7 @@ class Mixpanel(object):
         """
         if retries < self.max_retries:
             # Add API version to url path if needed
-            if base_url == self.import_api or base_url == Mixpanel.BETA_IMPORT_API:
+            if base_url == self.import_api:
                 base = [base_url]
             else:
                 base = [base_url, str(Mixpanel.VERSION)]
@@ -221,9 +220,9 @@ class Mixpanel(object):
                     or "import-events" in path_components
                 ):
                     data += "&verbose=1"
-                    data = data.encode("utf-8")
-                    # Uncomment the line below to log the request body data
-                    # Mixpanel.LOGGER.debug(method + ' data: ' + data.decode('utf-8'))
+                # Uncomment the line below to debug log the request body data
+                # Mixpanel.LOGGER.debug(f"{method} data: {data}")
+                data = data.encode("utf-8")
             Mixpanel.LOGGER.debug(f"Request Method: {method}")
             Mixpanel.LOGGER.debug(f"Request URL: {request_url}")
 
@@ -1937,11 +1936,6 @@ class Mixpanel(object):
             )
             return
 
-        if base_url == self.BETA_IMPORT_API:
-            batch_size = 1000
-        else:
-            batch_size = 50
-
         for item in item_list:
             if prep_args is not None:
                 # Insert the given item as the first argument to be passed to the _prep function determined above
@@ -1952,7 +1946,7 @@ class Mixpanel(object):
             else:
                 batch.append(item)
 
-            if len(batch) == batch_size:
+            if len(batch) == 50:
                 # Add an asynchronous call to _send_batch to the thread pool
                 pool.apply_async(
                     self._send_batch,
@@ -1961,7 +1955,7 @@ class Mixpanel(object):
                 )
                 batch = []
 
-        # If there are fewer than batch_size updates left ensure one last call is made
+        # If there are fewer than 50 updates left ensure one last call is made
         if len(batch):
             # Add an asynchronous call to _send_batch to the thread pool
             pool.apply_async(
