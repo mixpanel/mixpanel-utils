@@ -233,11 +233,8 @@ class Mixpanel(object):
                     "{}:".format(self.api_secret).encode("utf-8")
                 ).decode("utf-8")
             )
-            request = urllib.request.Request(request_url, data, headers)
+            request = urllib.request.Request(request_url, data, headers, method=method)
             Mixpanel.LOGGER.debug(f"Request Headers: {json.dumps(headers)}")
-            # This is the only way to use HTTP methods other than GET or POST with urllib2
-            if method != "GET" and method != "POST":
-                request.get_method = lambda: method
 
             try:
                 response = urllib.request.urlopen(request, timeout=self.timeout)
