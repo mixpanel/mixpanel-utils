@@ -287,7 +287,9 @@ class Mixpanel(object):
             except timeout:
                 Mixpanel.LOGGER.warning("The read operation timed out.")
                 self.timeout = self.timeout + 30
-                Mixpanel.LOGGER.warning(f"Increasing timeout to {self.timeout} and attempting retry #{retries + 1}")
+                Mixpanel.LOGGER.warning(
+                    f"Increasing timeout to {self.timeout} and attempting retry #{retries + 1}"
+                )
                 return self.request(
                     base_url,
                     path_components,
@@ -306,7 +308,9 @@ class Mixpanel(object):
                         response_data = response.read()
                     return response_data.decode("utf-8")
                 except IncompleteRead:
-                    Mixpanel.LOGGER.warning(f"Response data is incomplete. Attempting retry #{retries + 1}")
+                    Mixpanel.LOGGER.warning(
+                        f"Response data is incomplete. Attempting retry #{retries + 1}"
+                    )
                     return self.request(
                         base_url,
                         path_components,
@@ -393,7 +397,9 @@ class Mixpanel(object):
         )
 
         profile_count = len(profiles_list)
-        Mixpanel.LOGGER.debug(f"{operation} operation applied to {profile_count} profiles")
+        Mixpanel.LOGGER.debug(
+            f"{operation} operation applied to {profile_count} profiles"
+        )
         return profile_count
 
     def people_delete(
@@ -1894,7 +1900,9 @@ class Mixpanel(object):
                     for item in item_file:
                         item_list.append(json.loads(item))
         except IOError:
-            Mixpanel.LOGGER.error(f"Error loading data from file: {filename}", exc_info=True)
+            Mixpanel.LOGGER.error(
+                f"Error loading data from file: {filename}", exc_info=True
+            )
 
         return item_list
 
@@ -2049,7 +2057,9 @@ class Mixpanel(object):
             if compress:
                 Mixpanel._gzip_file(output_file)
         else:
-            Mixpanel.LOGGER.warning(f"Invalid format must be either json or csv, got: {format}")
+            Mixpanel.LOGGER.warning(
+                f"Invalid format must be either json or csv, got: {format}"
+            )
             return
 
     def _get_engage_page(self, params):
