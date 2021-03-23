@@ -52,7 +52,6 @@ class Mixpanel(object):
         self,
         api_secret,
         token=None,
-        dataset_id=None,
         timeout=120,
         pool_size=None,
         read_pool_size=2,
@@ -64,7 +63,6 @@ class Mixpanel(object):
 
         :param api_secret: API Secret for your project
         :param token: Project Token for your project, required for imports
-        :param dataset_id: The name of the dataset to operate on
         :param timeout: Time in seconds to wait for HTTP responses
         :param pool_size: Number of threads to use for sending data to Mixpanel (Default value = cpu_count * 2)
         :param read_pool_size: Separate number of threads to use just for read operations (i.e. query_engage)
@@ -74,7 +72,6 @@ class Mixpanel(object):
         :param eu: Is the project participating in EU residency
         :type api_secret: str
         :type token: str
-        :type dataset_id: str
         :type timeout: int
         :type pool_size: int
         :type read_pool_size: int
@@ -86,7 +83,6 @@ class Mixpanel(object):
 
         self.api_secret = api_secret
         self.token = token
-        self.dataset_id = dataset_id
         self.timeout = timeout
         if pool_size is None:
             # Default number of threads is system dependent
@@ -1407,7 +1403,7 @@ class Mixpanel(object):
         profiles = self.query_engage(params, timezone_offset=timezone_offset)
         Mixpanel.export_data(profiles, output_file, format=format, compress=compress)
 
-    def import_events(self, data, timezone_offset, dataset_version=None):
+    def import_events(self, data, timezone_offset):
         """Imports a list of Mixpanel event dicts or a file containing a JSON array of Mixpanel events.
 
         https://mixpanel.com/help/reference/importing-old-events
@@ -1416,38 +1412,18 @@ class Mixpanel(object):
             events
         :param timezone_offset: UTC offset (number of hours) for the project that exported the data. Used to convert the
             event timestamps back to UTC prior to import.
-        :param dataset_version: Dataset version to import into, required if self.dataset_id is set, otherwise
-            optional
         :type data: list | str
         :type timezone_offset: int | float
-        :type dataset_version: str
 
         """
-        if self.dataset_id or dataset_version:
-            if self.dataset_id and dataset_version:
-                endpoint = "import-events"
-                base_url = self.BETA_IMPORT_API
-            else:
-                Mixpanel.LOGGER.warning(
-                    "Must supply both, dataset_version and dataset_id in init, or neither!"
-                )
-                return
-        else:
-            endpoint = "import"
-            base_url = self.import_api
-
         self._import_data(
             data,
-            base_url,
-            endpoint,
+            self.import_api,
+            "import",
             timezone_offset=timezone_offset,
-            dataset_id=self.dataset_id,
-            dataset_version=dataset_version,
         )
 
-    def import_people(
-        self, data, ignore_alias=False, dataset_version=None, raw_record_import=False
-    ):
+    def import_people(self, data, ignore_alias=False, raw_record_import=False):
         """Imports a list of Mixpanel People profile dicts (or raw API update operations) or a file containing a JSON
             array or CSV of Mixpanel People profiles (or raw API update operations).
 
@@ -1456,169 +1432,18 @@ class Mixpanel(object):
         :param data: A list of Mixpanel People profile dicts (or /engage API update operations) or the name of a file
             containing a JSON array of Mixpanel People profiles (or /engage API update operations).
         :param ignore_alias: Option to bypass Mixpanel's alias lookup table (Default value = False)
-        :param dataset_version: Dataset version to import into, required if self.dataset_id is set, otherwise
-            optional
         :param raw_record_import: Set this to True if data is a list of API update operations (Default value = False)
         :type data: list | str
         :type ignore_alias: bool
-        :type dataset_version: str
 
         """
-        if self.dataset_id or dataset_version:
-            if self.dataset_id and dataset_version:
-                endpoint = "import-people"
-                base_url = self.BETA_IMPORT_API
-            else:
-                Mixpanel.LOGGER.warning(
-                    "Must supply both, dataset_version and dataset_id in init, or neither!"
-                )
-                return
-        else:
-            endpoint = "engage"
-            base_url = self.import_api
-
         self._import_data(
             data,
-            base_url,
-            endpoint,
+            self.import_api,
+            "engage",
             ignore_alias=ignore_alias,
-            dataset_id=self.dataset_id,
-            dataset_version=dataset_version,
             raw_record_import=raw_record_import,
         )
-
-    def list_all_dataset_versions(self):
-        """Returns a list of all dataset version objects for the current dataset_id
-
-        :return: A list of dataset version objects
-        :rtype: list
-
-        """
-        assert self.dataset_id, "dataset_id required!"
-        return self._datasets_request(
-            "GET", dataset_id=self.dataset_id, versions_request=True
-        )
-
-    def create_dataset_version(self):
-        """Creates a new dataset version for the current dataset_id. Note that dataset_id must already exist!
-
-        :return: Returns a dataset version object. This version of the dataset is writable by default while the ready
-            and readable flags in the version state are false.
-        :rtype: dict
-
-        """
-        assert self.dataset_id, "dataset_id required!"
-        return self._datasets_request(
-            "POST", dataset_id=self.dataset_id, versions_request=True
-        )
-
-    def update_dataset_version(self, version_id, state):
-        """Updates a specific version_id for the current dataset_id. Currently, users can only update the state
-            of a given dataset version. Only the readable and writable boolean fields can be updated.
-
-        :param version_id: version_id of the version to be updated
-        :param state: State object with fields to be updated
-        :type version_id: str
-        :type state: dict
-        :return: True for success, False otherwise.
-        :rtype: bool
-
-        """
-        assert self.dataset_id, "dataset_id required!"
-        assert "writable" in state, "state must specify writable field!"
-        assert "readable" in state, "state must specify readable field!"
-        return self._datasets_request(
-            "PATCH",
-            dataset_id=self.dataset_id,
-            versions_request=True,
-            version_id=version_id,
-            state=state,
-        )
-
-    def mark_dataset_version_readable(self, version_id):
-        """Updates the readable field of the specified version_id's state to true for the current dataset_id
-
-        :param version_id: version_id of the version to be marked readable
-        :type version_id: str
-        :return: True for success, False otherwise.
-        :rtype: bool
-
-        """
-        Mixpanel.LOGGER.debug("Fetching current version...")
-        version = self.list_dataset_version(version_id)
-        if "state" in version:
-            writable = version["state"]["writable"]
-            state = {"writable": writable, "readable": True}
-            Mixpanel.LOGGER.debug(f"Updating state with: {state}")
-            self.update_dataset_version(version_id, state)
-        else:
-            Mixpanel.LOGGER.warning(
-                f"Failed to get dataset version object for version_id {version_id} of dataset {self.dataset_id}"
-            )
-            return False
-
-    def delete_dataset_version(self, version_id):
-        """Deletes the version with version_id of the current dataset_id
-
-        :param version_id: version_id of the version to be deleted
-        :type version_id: str
-        :return: True for success, False otherwise.
-        :rtype: bool
-
-        """
-        assert self.dataset_id, "dataset_id required!"
-        return self._datasets_request(
-            "DELETE",
-            dataset_id=self.dataset_id,
-            versions_request=True,
-            version_id=version_id,
-        )
-
-    def list_dataset_version(self, version_id):
-        """Returns the dataset version object with the specified version_id for the current dataset_id
-
-        :param version_id: version_id of the dataset version object to return
-        :type version_id: str
-        :return: Returns a dataset version object
-        :rtype: dict
-
-        """
-        assert self.dataset_id, "dataset_id required!"
-        return self._datasets_request(
-            "GET",
-            dataset_id=self.dataset_id,
-            versions_request=True,
-            version_id=version_id,
-        )
-
-    def wait_until_dataset_version_ready(self, version_id):
-        """Polls the ready state of the specified version_id for the current dataset_id every 60 seconds until it's True
-
-        :param version_id: version_id of the dataset_version to check if ready
-        :type version_id: str
-        :return: Returns True once the dataset version's ready field is true. Returns False if the dataset version isn't
-            found
-        :rtype: bool
-
-        """
-        ready = False
-        attempt = 0
-
-        while not ready:
-            Mixpanel.LOGGER.debug("Waiting...")
-            time.sleep(60)
-            version = self.list_dataset_version(version_id)
-            attempt = attempt + 1
-            if "state" in version:
-                ready = version["state"]["ready"]
-                Mixpanel.LOGGER.debug(f"Attempt #{attempt}: ready = {ready}")
-            else:
-                Mixpanel.LOGGER.warning(
-                    f"Failed to get dataset version object for version_id {version_id} of dataset {self.dataset_id}"
-                )
-                return False
-
-        return True
 
     """
     Private, internal methods
@@ -1746,8 +1571,6 @@ class Mixpanel(object):
             else:
                 try:
                     p = json.loads(row[x])
-                    if isinstance(p, list):
-                        Mixpanel.LOGGER.debug(str(p))
                     props[prop] = p
                 except (SyntaxError, ValueError):
                     props[prop] = row[x]
@@ -2085,8 +1908,6 @@ class Mixpanel(object):
         endpoint,
         item_list,
         prep_args,
-        dataset_id=None,
-        dataset_version=None,
     ):
         """Asynchronously sends batches of items to the /import, /engage, /import-events or /import-people Mixpanel API
         endpoints
@@ -2096,15 +1917,10 @@ class Mixpanel(object):
         :param item_list: List of Mixpanel event data or People updates
         :param prep_args: List of arguments to be provided to the appropriate _prep method in addition to the profile or
             event
-        :param dataset_id: Dataset name to import into, required if dataset_version is specified, otherwise optional
-        :param dataset_version: Dataset version to import into, required if dataset_id is specified, otherwise
-            optional
         :type base_url: str
         :type endpoint: str
         :type item_list: list
         :type prep_args: list
-        :type dataset_id: str
-        :type dataset_version: str
 
         """
         pool = ThreadPool(processes=self.pool_size)
@@ -2140,7 +1956,7 @@ class Mixpanel(object):
                 # Add an asynchronous call to _send_batch to the thread pool
                 pool.apply_async(
                     self._send_batch,
-                    args=(base_url, endpoint, batch, dataset_id, dataset_version),
+                    args=(base_url, endpoint, batch),
                     callback=Mixpanel._async_response_handler_callback,
                 )
                 batch = []
@@ -2150,7 +1966,7 @@ class Mixpanel(object):
             # Add an asynchronous call to _send_batch to the thread pool
             pool.apply_async(
                 self._send_batch,
-                args=(base_url, endpoint, batch, dataset_id, dataset_version),
+                args=(base_url, endpoint, batch),
                 callback=Mixpanel._async_response_handler_callback,
             )
         pool.close()
@@ -2161,8 +1977,6 @@ class Mixpanel(object):
         base_url,
         endpoint,
         batch,
-        dataset_id=None,
-        dataset_version=None,
         retries=0,
     ):
         """POST a single batch of data to a Mixpanel API and return the response
@@ -2170,15 +1984,10 @@ class Mixpanel(object):
         :param base_url: The base API url
         :param endpoint: Can be 'import', 'engage', 'import-events' or 'import-people'
         :param batch: List of Mixpanel event data or People updates to import.
-        :param dataset_id: Dataset name to import into, required if dataset_version is specified, otherwise optional
-        :param dataset_version: Dataset version to import into, required if dataset_id is specified, otherwise
-            optional
         :param retries:  Max number of times to retry if we get a HTTP 5xx response (Default value = 0)
         :type base_url: str
         :type endpoint: str
         :type batch: list
-        :type dataset_id: str
-        :type dataset_version: str
         :type retries: int
         :return: HTTP response from Mixpanel API
         :rtype: str
@@ -2186,17 +1995,14 @@ class Mixpanel(object):
         """
         try:
             params = {"data": base64.b64encode(json.dumps(batch).encode("utf-8"))}
-            if dataset_id:
-                params["dataset_id"] = dataset_id
-                params["token"] = self.token
-            if dataset_version:
-                params["dataset_version"] = dataset_version
-            response = self.request(base_url, [endpoint], params, "POST")
+            response = self.request(
+                base_url, [endpoint], params, "POST", retries=retries
+            )
             Mixpanel.LOGGER.debug(
                 f"Sent {len(batch)} items on {time.strftime('%Y-%m-%d %H:%M:%S')}!"
             )
             return response
-        except BaseException:
+        except Exception:
             Mixpanel.LOGGER.error(
                 "Failed to import batch, dumping to file import_backup.txt",
                 exc_info=True,
@@ -2212,8 +2018,6 @@ class Mixpanel(object):
         endpoint,
         timezone_offset=None,
         ignore_alias=False,
-        dataset_id=None,
-        dataset_version=None,
         raw_record_import=False,
     ):
         """Base method to import either event data or People profile data as a list of dicts or from a JSON array
@@ -2225,26 +2029,15 @@ class Mixpanel(object):
         :param timezone_offset: UTC offset (number of hours) for the project that exported the data. Used to convert the
             event timestamps back to UTC prior to import. (Default value = 0)
         :param ignore_alias: Option to bypass Mixpanel's alias lookup table (Default value = False)
-        :param dataset_id: Dataset name to import into, required if dataset_version is specified, otherwise optional
-        :param dataset_version: Dataset version to import into, required if dataset_id is specified, otherwise
-            optional
         :param raw_record_import: Set this to True if data is a list of People update operations
         :type data: list | str
         :type endpoint: str
         :type timezone_offset: int | float
         :type ignore_alias: bool
-        :type dataset_id: str
-        :type dataset_version: str
         :type raw_record_import: bool
 
         """
         assert self.token, "Project token required for import!"
-        if self.dataset_id or dataset_version:
-            if not (dataset_id and dataset_version):
-                Mixpanel.LOGGER.warning(
-                    "Both dataset_id AND dataset_version are required"
-                )
-                return
 
         # Create a list of arguments to be used in one of the _prep functions later
         args = [{}, self.token]
@@ -2265,8 +2058,6 @@ class Mixpanel(object):
             endpoint,
             item_list,
             args,
-            dataset_id=dataset_id,
-            dataset_version=dataset_version,
         )
 
     def _query_jql_items(
@@ -2370,63 +2161,3 @@ class Mixpanel(object):
             params["output_properties"] = output_properties
 
         return self.query_jql(jql_script, params=params, format=format)
-
-    def _datasets_request(
-        self,
-        method,
-        dataset_id=None,
-        versions_request=False,
-        version_id=None,
-        state=None,
-    ):
-        """Internal base method for making calls to the /datasets API
-
-        :param method: HTTP method verb: 'GET', 'POST', 'PUT', 'DELETE', 'PATCH'
-        :param dataset_id: Name of the dataset to operate on
-        :param versions_request: Boolean indicating whether or not this request goes to /datasets/versions
-        :param version_id: version_id to operate on
-        :param state: version state object for use when updating the version
-        :type method: str
-        :type dataset_id: str
-        :type versions_request: bool
-        :type version_id: str
-        :type state: dict
-        :return: Returns the (parsed json) 'data' attribute of the response. Type depends on the specific API call.
-            If there is no 'error' and 'data' is None, returns True. Otherwise returns False.
-
-        """
-        path = ["datasets"]
-        if dataset_id is not None:
-            path.append(dataset_id)
-        if versions_request or version_id is not None:
-            if dataset_id is not None:
-                path.append("versions")
-            else:
-                Mixpanel.LOGGER.warning(
-                    "dataset_id parameter required to make a request to /versions"
-                )
-                return
-            if version_id is not None:
-                path.append(str(version_id))
-        assert self.token, "token required for /datasets API calls!"
-        arguments = {"token": self.token}
-        if state is not None:
-            arguments["state"] = json.dumps(state)
-        response = self.request(self.BETA_IMPORT_API, path, arguments, method=method)
-        Mixpanel.LOGGER.debug(f"Response: {response}")
-        json_response = json.loads(response)
-        if "error" not in response:
-            if "data" in response:
-                data = json_response["data"]
-                if data is None:
-                    return True
-                else:
-                    return data
-            else:
-                Mixpanel.LOGGER.warning(
-                    f"Response doesn't contain a data key, got: {response}"
-                )
-                return False
-        else:
-            Mixpanel.LOGGER.warning(f"Dataset operation error: {response['error']}")
-            return False
