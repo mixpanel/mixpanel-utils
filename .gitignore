@@ -1,6 +1,7 @@
 # custom ignores
 .DS_Store
 *.orig
+.idea/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

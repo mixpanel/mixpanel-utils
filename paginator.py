@@ -70,7 +70,7 @@ class ConcurrentPaginator(object):
 
     def _results_fetcher(self, params):
         def _fetcher_func(page):
-            req_params = dict(list(params.iteritems()) + [('page', page)])
+            req_params = dict(list(params.items()) + [('page', page)])
             return self.get_func(req_params)['results']
         return _fetcher_func
 
