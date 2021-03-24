@@ -61,8 +61,8 @@ class ConcurrentPaginator(object):
         params = params and params.copy() or {}
 
         first_page = self.get_func(params)
-        results = first_page['results']
-        params['session_id'] = first_page['session_id']
+        results = first_page["results"]
+        params["session_id"] = first_page["session_id"]
 
         start, end = self._remaining_page_range(first_page)
         fetcher = self._results_fetcher(params)
@@ -70,8 +70,9 @@ class ConcurrentPaginator(object):
 
     def _results_fetcher(self, params):
         def _fetcher_func(page):
-            req_params = dict(list(params.items()) + [('page', page)])
-            return self.get_func(req_params)['results']
+            req_params = dict(list(params.items()) + [("page", page)])
+            return self.get_func(req_params)["results"]
+
         return _fetcher_func
 
     def _concurrent_flatmap(self, func, iterable):
@@ -82,6 +83,5 @@ class ConcurrentPaginator(object):
         return res
 
     def _remaining_page_range(self, response):
-        num_pages = math.ceil(response['total'] / float(response['page_size']))
-        return response['page'] + 1, int(num_pages)
-
+        num_pages = math.ceil(response["total"] / float(response["page_size"]))
+        return response["page"] + 1, int(num_pages)
