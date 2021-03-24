@@ -1,5 +1,7 @@
 # Mixpanel-api Module
 
+### Please note: From v2.0 this module supports Python 3 only. If you require Python 2 support do not upgrade past v1.6.5.
+
 ### Table of Contents
 
 * [Installation](#installation)
@@ -29,8 +31,6 @@ NOTE - for a server-side integration with our official Python Library, please re
 The mixpanel-api module is designed to allow Mixpanel users to rapidly and easily utilize our export APIs to accomplish common tasks such as people/event exports, imports, people profile transform, deletions, etc...
 
 A complete API reference for this module is available here: http://mixpanel-api.readthedocs.io/
-
-Please note: This module supports Python 3 only. Python 2 is not supported.
 
 #### Installation
 
