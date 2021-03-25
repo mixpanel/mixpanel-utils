@@ -926,7 +926,9 @@ class MixpanelUtils(object):
 
         for matching_prop, matching_profiles in main_reference.items():
             if len(matching_profiles) > 1:
-                matching_profiles.sort(key=lambda dupe: MixpanelUtils._dt_from_iso(dupe))
+                matching_profiles.sort(
+                    key=lambda dupe: MixpanelUtils._dt_from_iso(dupe)
+                )
                 # We create a $delete update for each duplicate profile and at the same time create a
                 # $set_once update for the keeper profile by working through duplicates oldest to newest
                 if merge_props:
@@ -1232,7 +1234,9 @@ class MixpanelUtils(object):
                 try:
                     file_like_object = io.StringIO(response.strip())
                 except TypeError:
-                    MixpanelUtils.LOGGER.error("Error querying /export API", exc_info=True)
+                    MixpanelUtils.LOGGER.error(
+                        "Error querying /export API", exc_info=True
+                    )
                     return
                 raw_data = file_like_object.getvalue().split("\n")
                 events = []
@@ -1397,7 +1401,9 @@ class MixpanelUtils(object):
         if params is None:
             params = {}
         profiles = self.query_engage(params, timezone_offset=timezone_offset)
-        MixpanelUtils.export_data(profiles, output_file, format=format, compress=compress)
+        MixpanelUtils.export_data(
+            profiles, output_file, format=format, compress=compress
+        )
 
     def import_events(self, data, timezone_offset):
         """Imports a list of Mixpanel event dicts or a file containing a JSON array of Mixpanel events.
@@ -1413,10 +1419,7 @@ class MixpanelUtils(object):
 
         """
         self._import_data(
-            data,
-            self.import_api,
-            "import",
-            timezone_offset=timezone_offset,
+            data, self.import_api, "import", timezone_offset=timezone_offset,
         )
 
     def import_people(self, data, ignore_alias=False, raw_record_import=False):
@@ -1869,7 +1872,9 @@ class MixpanelUtils(object):
 
         """
         if format == "json":
-            MixpanelUtils.export_data(items, output_file, format=format, compress=compress)
+            MixpanelUtils.export_data(
+                items, output_file, format=format, compress=compress
+            )
         elif format == "csv":
             with open(output_file, "w") as f:
                 f.write(items)
@@ -1899,11 +1904,7 @@ class MixpanelUtils(object):
             return
 
     def _dispatch_batches(
-        self,
-        base_url,
-        endpoint,
-        item_list,
-        prep_args,
+        self, base_url, endpoint, item_list, prep_args,
     ):
         """Asynchronously sends batches of items to the /import, /engage, /import-events or /import-people Mixpanel API
         endpoints
@@ -1964,11 +1965,7 @@ class MixpanelUtils(object):
         pool.join()
 
     def _send_batch(
-        self,
-        base_url,
-        endpoint,
-        batch,
-        retries=0,
+        self, base_url, endpoint, batch, retries=0,
     ):
         """POST a single batch of data to a Mixpanel API and return the response
 
@@ -2045,10 +2042,7 @@ class MixpanelUtils(object):
             args = None
 
         self._dispatch_batches(
-            base_url,
-            endpoint,
-            item_list,
-            args,
+            base_url, endpoint, item_list, args,
         )
 
     def _query_jql_items(
