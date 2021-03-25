@@ -1,4 +1,4 @@
-# Mixpanel-api Module
+# Mixpanel-utils Module
 
 ### Please note: From v2.0 this module supports Python 3 only. If you require Python 2 support do not upgrade past v1.6.5.
 
@@ -28,34 +28,34 @@
 
 NOTE - for a server-side integration with our official Python Library, please refer here: https://github.com/mixpanel/mixpanel-python
 
-The mixpanel-api module is designed to allow Mixpanel users to rapidly and easily utilize our export APIs to accomplish common tasks such as people/event exports, imports, people profile transform, deletions, etc...
+The mixpanel-utils module is designed to allow Mixpanel users to rapidly and easily utilize our export APIs to accomplish common tasks such as people/event exports, imports, people profile transform, deletions, etc...
 
 A complete API reference for this module is available here: http://mixpanel-api.readthedocs.io/
 
 #### Installation
 
-You may install the mixpanel-api module via pip:
+You may install the mixpanel-utils module via pip:
 
 ```
-pip install mixpanel-api 
+pip install mixpanel-utils 
 ```
 
 #### Usage
 
-To use the mixpanel_api module import it like so:
+To use the mixpanel_utils module import it like so:
 
 ```python
-from mixpanel_api import Mixpanel
+from mixpanel_utils import MixpanelUtils
 ```
 Then create a new Mixpanel object like:
 ```python
-mixpanel = Mixpanel('API Secret', token='Token')
+mixpanel = MixpanelUtils('API Secret', token='Token')
 ```
 And use the functions below.
 
 Some example scripts are: 
 
-*[mixpanel_api_example.py](mixpanel_api_example.py)
+*[mixpanel_utils_example.py](mixpanel_utils_example.py)
 
 #### Top-level functions
 These are functions that should allow you to complete a number of tasks with minimal effort.
@@ -66,7 +66,7 @@ __init__(api_secret, token=None, dataset_id=None, timeout=120, pool_size=None, r
 ```
 Example:
 ```python
-Mixpanel('secrethere',token='tokenhere')
+MixpanelUtils('secrethere',token='tokenhere')
 ```
 When initializing the Mixpanel class you must specify an api_secret. You may specify a token (this is required if you are importing). You may also specify timeouts for request queries (in seconds), the number of CPU cores to use with pool_size (defaults to all), the maximum number of simultaneous read connections to make with read_pool_size, and the maximum number of retries an import will attempt at a time before giving up.
 
