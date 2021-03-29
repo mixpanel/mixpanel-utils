@@ -1,6 +1,6 @@
 # Mixpanel-utils Module
 
-### Please note: From v2.0 this module supports Python 3 only. If you require Python 2 support do not upgrade past v1.6.5.
+### Please note: From v2.0 this module supports Python 3 only. If you require Python 2 use the older mixpanel_api v1.6.5.
 
 ### Table of Contents
 
@@ -37,7 +37,7 @@ A complete API reference for this module is available here: http://mixpanel-api.
 You may install the mixpanel-utils module via pip:
 
 ```
-pip install mixpanel-utils 
+pip3 install mixpanel-utils 
 ```
 
 #### Usage
@@ -49,7 +49,7 @@ from mixpanel_utils import MixpanelUtils
 ```
 Then create a new Mixpanel object like:
 ```python
-mixpanel = MixpanelUtils('API Secret', token='Token')
+mputils = MixpanelUtils('API Secret', token='Token')
 ```
 And use the functions below.
 
@@ -66,7 +66,7 @@ __init__(api_secret, token=None, dataset_id=None, timeout=120, pool_size=None, r
 ```
 Example:
 ```python
-MixpanelUtils('secrethere',token='tokenhere')
+mputils = MixpanelUtils('secrethere',token='tokenhere')
 ```
 When initializing the Mixpanel class you must specify an api_secret. You may specify a token (this is required if you are importing). You may also specify timeouts for request queries (in seconds), the number of CPU cores to use with pool_size (defaults to all), the maximum number of simultaneous read connections to make with read_pool_size, and the maximum number of retries an import will attempt at a time before giving up.
 
@@ -79,7 +79,7 @@ export_events(output_file, params, format='json', timezone_offset=None, add_gzip
 ```
 Example:
 ```python
-export_events('event_export.txt',{'from_date':'2016-01-01','to_date':'2016-01-01','event':'["App Install"]'})
+mputils.export_events('event_export.txt',{'from_date':'2016-01-01','to_date':'2016-01-01','event':'["App Install"]'})
 ```
 Exports raw events and writes them to a file using the export endpoint. You must specify the file, the export params (see [here](https://mixpanel.com/help/reference/exporting-raw-data#export-api-reference) for full list of parameters) and the format (default is JSON). Current supported formats are json or csv. You may also add a timezone_offset which should be the offset from UTC the project is in. This modifies the time property so it is in unix time. You can also specify that you wish to receive the files as gzip from our servers using the add_gzip_header option. This is recommended if you believe the export will be large as it can significantly improve transfer time. You may also specify whether you wish to gzip the data after receiving it using the compress option
 
@@ -91,7 +91,7 @@ Example:
 ```python
 selector = '(("Albany" in properties["$city"]) and (defined (properties["$city"])))'
 parameters = { 'selector' : selector}
-m.export_people('people_export.txt',parameters,timezone_offset=-8)
+mputils.export_people('people_export.txt',parameters,timezone_offset=-8)
 ```
 Exports people profiles and writes them to a file using the engage endpoint. You must specify the file, the export params (see [here](https://mixpanel.com/help/reference/data-export-api#people-analytics) for full list of parameters) and the export format (default is JSON).  Current supported formats are JSON or CSV. In addition if you are using behaviors in your parameters you must specify a timezone_offset parameter. See [import_events](#import-events) for information on the timezone_offset parameter. You may also specify whether you wish to gzip the data after receiving it using the compress option.
 
@@ -101,7 +101,7 @@ import_events(data, timezone_offset, dataset_version=None)
 ```
 Example:
 ```python
-import_events('event_export.txt',timezone_offset=-8)
+mputils.import_events('event_export.txt',timezone_offset=-8)
 ```
 Imports events using the import endpoint. The data parameter is expected to be a filename of a file containing either a CSV or JSON object or list of JSON objects (as in a raw event export) or a list of events. You must specify a timezone offset. This will be the project's timezone offset from UTC. For instance PST is -8 so in that case timezone_offset=-8 would be how you import data that was exported from a project in pacific time during PST time (assuming no timezone_offset was set in the export_events call). The dataset_version is the parameter you must specify if you are importing events into a dataset. See the section on [importing into datasets](#importing-data-into-a-dataset) for more information.
 
@@ -111,7 +111,7 @@ import_people(data, ignore_alias=False, dataset_version=None, raw_record_import=
 ```
 Example:
 ```python
-import_people('people_export.txt')
+mputils.import_people('people_export.txt')
 ```
 imports people using the engage endpoint. The data parameter is expected to be a filename or a list of objects. The file should be either in CSV or JSON format. The list should be a list of JSON objects (as in an engage export). By default import people checks to see if the distinct_ids specified are aliased. You may specify you wish to ignore alias using ignore_alias=True. If the import is composed of raw engage API updates you may choose to turn on the raw_record_import flag. The dataset_version parameter is for if you wish to import people profiles into a dataset. See the section on [importing into datasets](#importing-data-into-a-dataset) for more information. This method ignores time and IP (so the people profile’s last seen and location will not be updated). 
 
@@ -121,7 +121,7 @@ people_delete(profiles=None, query_params=None, timezone_offset=None, ignore_ali
 ```
 Example:
 ```python
-people_delete(query_params={ 'selector' : '(("Albany" in properties["$city"]) and (defined (properties["$city"])))'})
+mputils.people_delete(query_params={ 'selector' : '(("Albany" in properties["$city"]) and (defined (properties["$city"])))'})
 ```
 Deletes people profiles using the engage endpoint. You may provide a list of profiles to be deleted or a query parameter (see [here](https://mixpanel.com/help/reference/data-export-api#people-analytics). By default this will create a backup of these profiles with the name backup_{timestamp}.json where timestamp is the current time in epoch time. You may also provide a backup file name using the backup_file parameter. If your selector is using a behavior you must specify a timezone_offset parameter. This will be the UTC offset of your project time.
 
@@ -131,7 +131,7 @@ people_set(value, profiles=None, query_params=None, ignore_alias=False, backup=T
 ```
 Example:
 ```python
-people_set({'chiles':'green'},query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'}	)
+mputils.people_set({'chiles':'green'},query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'}	)
 ```
 Sets people properties to a specific value using the engage endpoint. This should be a dictionary where the keys are the properties you wish to set and the values are the values of those properties. For example, if value was equal to `{ ‘user_level’ : 1 }` it would add the property ‘user_level’ with a value of 1 to all the profiles. You can provide a list of profiles to be deleted or a query parameter (see here for full list of parameters). By default a people_set function call will  perform an alias lookup for the distint_id, however by setting the ignore_alias parameter to True it will not perform an alias lookup for the distinct_id. By default this will create a backup of these profiles, however, if you do not want it to you can set the backup property to false to turn off backing up the profiles. The name of this backup profile by default will be name backup_{timestamp}.json where timestamp is the current time in epoch time. You may also provide a backup file name using the backup_file parameter. If you are using behaviors in your query_params you must specify a timezone_offset.	
 
@@ -141,7 +141,7 @@ people_set_once(value, profiles=None, query_params=None, ignore_alias=False, bac
 ```
 Example:
 ```python
-people_set_once({'chiles':'red'},query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'})
+mputils.people_set_once({'chiles':'red'},query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'})
 ```
 Sets people properties but only if they do not already exist. See [people_set](#set-properties) for information on the rest of the query parameters. If you are using behaviors in your query_params you must specify a timezone_offset.
 
@@ -151,7 +151,7 @@ people_unset(value, profiles=None, query_params=None, ignore_alias=False, backup
 ```
 Example:
 ```python
-people_unset(['coins','feathers'],query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'})
+mputils.people_unset(['coins','feathers'],query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'})
 ```
 Unset a people property on the profiles targeted. In this case value should be a list with a string containing the property to be unset (for example `[‘user_level’]`). See [people_set](#set-properties) for information on the rest of the query parameters. If you are using behaviors in your query_params you must specify a timezone_offset.
 
@@ -161,7 +161,7 @@ people_add(value, profiles=None, query_params=None, ignore_alias=False, backup=T
 ```
 Example:
 ```python
-people_add({'coins':1},query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'})
+mputils.people_add({'coins':1},query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'})
 ```
 Adds an amount to a property. Value is a dictionary where the key is the property name you wish to add to and the value is the number you’d like to add to that property (for example if value is `{ ‘user_level’ : 1 }` it would increment the property user_level by 1. See [people_set](#set-properties) for information on the rest of the query parameters. If you are using behaviors in your query_params you must specify a timezone_offset.
 
@@ -171,7 +171,7 @@ people_append(value, profiles=None, query_params=None, ignore_alias=False, backu
 ```
 Example:
 ```python
-people_append({'favorite_colors':'red'},query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'})
+mputils.people_append({'favorite_colors':'red'},query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'})
 ```
 Appends a value to a list property. Value is a dictionary where the key is the name of the list property and the value is the value to be appended. For example, `{‘Items purchased’ : ‘coffee maker’}` would add the string ‘coffee maker’ to the list property ‘Items purchased’. See [people_set](#set-properties) for information on the rest of the query parameters. If you are using behaviors in your query_params you must specify a timezone_offset.
 
@@ -181,7 +181,7 @@ people_union(value, profiles=None, query_params=None, ignore_alias=False, backup
 ```
 Example:
 ```python
-people_union({'favorite_colors': ['green']}, query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'})
+mputils.people_union({'favorite_colors': ['green']}, query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'})
 ```
 Takes a dictionary containing keys and list values. The list values in the request are merged with the existing list on the user profile, ignoring duplicate list values. For example, `{ ‘Items purchased’: [‘socks’, ‘shirts’] }` will add the values ‘socks’ and ‘shirts’ to the list property ‘Items purchased’ only if they don’t already exist in the list. See [people_set](#set-properties) for information on the rest of the query parameters. If you are using behaviors in your query_params you must specify a timezone_offset.
 
@@ -191,7 +191,7 @@ people_remove(value, profiles=None, query_params=None, ignore_alias=False, backu
 ```
 Example:
 ```python
-people_remove({'favorite_colors':'yellow'},query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'})
+mputils.people_remove({'favorite_colors':'yellow'},query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'})
 ```
 Takes a dictionary containing keys and values. The value in the request is removed from the existing list on the user profile. If it does not exist, no updates are made. For example, `{ ‘Items purchased’: ‘socks’ }` would remove the value ‘socks’ from the list property ‘Items purchased’. See [people_set](#set-properties) for information on the rest of the query parameters. If you are using behaviors in your query_params you must specify a timezone_offset.
 
@@ -201,7 +201,7 @@ people_change_property_name(old_name, new_name, profiles=None, query_params=None
 ```
 Example:
 ```python
-people_change_property_name('favorite_colors', 'best colors',query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'})
+mputils.people_change_property_name('favorite_colors', 'best colors',query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'})
 ```
 Renames a property from one name to another. See [people_set](#set-properties) for information on the rest of the query parameters. If you are using behaviors in your query_params you must specify a timezone_offset.
 
@@ -212,7 +212,7 @@ deduplicate_people(profiles=None, prop_to_match='$email', merge_props=False, cas
 ```
 Example:
 ```python
-deduplicate_people(prop_to_match='$name',merge_props=True)
+mputils.deduplicate_people(prop_to_match='$name',merge_props=True)
 
 ```
 Deduplicates a set of people profiles, by default all of them, by a property specified by prop_to_match. By default this property is '$email'. This will automatically create a backup of the profiles. You may also have it merge properties together by setting merge_props=True. You may also specify whether the property to match on is case sensitive or not using the case_sensitive parameter. If you are using behaviors in your query_params you must specify a timezone_offset.
@@ -232,7 +232,7 @@ function main() {
   })
   .groupBy(["name"], mixpanel.reducer.count());
 }'''
-query_jql(script)
+mputils.query_jql(script)
 ```
 
 Queries the JQL API. This accepts a script parameter which is a string containing the JQL query you'd like to run (see [here](https://mixpanel.com/help/reference/jql) for information on writing JQL queries). It also accepts a dictionary of global parameters (see [here](https://mixpanel.com/help/reference/jql/api-reference#api/params) for more information on JQL global parameters) by passing this dictionary into the params property. This function will return the JSON response of the JQL query as a python dictionary. 
@@ -247,9 +247,9 @@ Say I have a list of distinct_ids and I'd like to add a property "favorite_color
 ```python
 # we'll provide the list here but this could just as easily be a list in a CSV
 profile_list = [{'$distinct_id':'joe@mail.com','favorite_color':'blue'},{'$distinct_id':'george@mail.com','favorite_color':'red'}]
-m = Mixpanel('secret',token='token')
+mputils = Mixpanel('secret',token='token')
 
-m.people_set(lambda x: {'favorite_color' : x['favorite_color']}, profiles=profile_list)
+mputils.people_set(lambda x: {'favorite_color' : x['favorite_color']}, profiles=profile_list)
 ```
 This will iterate over all the dictionary objects in the list profile_list and set the property 'favorite_color' on the people profile in Mixpanel with that distinct_id to that color. 
 
