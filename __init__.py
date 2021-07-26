@@ -132,7 +132,7 @@ class MixpanelUtils(object):
         open_mode = "w+"
         if append_mode:
             open_mode = "a+"
-        with open(output_file, open_mode) as output:
+        with open(output_file, open_mode, encoding="utf-8") as output:
             if format == "json":
                 json.dump(data, output)
             elif format == "csv":
@@ -1523,7 +1523,7 @@ class MixpanelUtils(object):
             header.append(key)
 
         # Create the writer and write the header
-        with open(output_file, "w") as output:
+        with open(output_file, "w", encoding="utf-8") as output:
             writer = csv.writer(output)
 
             writer.writerow(header)
@@ -1689,7 +1689,7 @@ class MixpanelUtils(object):
         except JSONDecodeError as e:
             if "Expecting value" in str(e):
                 # Based on the error message, try to treat it as CSV
-                with open(filename, "rU") as item_file:
+                with open(filename, "rU", encoding="utf-8") as item_file:
                     reader = csv.reader(item_file)
                     header = next(reader)
                     # Determine if the data is events or profiles based on keys in the header.
@@ -1770,7 +1770,7 @@ class MixpanelUtils(object):
             MixpanelUtils.LOGGER.warning(
                 "Event missing time or distinct_id property, dumping to invalid_events.txt"
             )
-            with open("invalid_events.txt", "a+") as invalid:
+            with open("invalid_events.txt", "a+", encoding="utf-8") as invalid:
                 json.dump(event, invalid)
                 invalid.write("\n")
                 return
@@ -1876,7 +1876,7 @@ class MixpanelUtils(object):
                 items, output_file, format=format, compress=compress
             )
         elif format == "csv":
-            with open(output_file, "w") as f:
+            with open(output_file, "w", encoding="utf-8") as f:
                 f.write(items)
             if compress:
                 MixpanelUtils._gzip_file(output_file)
@@ -1995,7 +1995,7 @@ class MixpanelUtils(object):
                 "Failed to import batch, dumping to file import_backup.txt",
                 exc_info=True,
             )
-            with open("import_backup.txt", "a+") as backup:
+            with open("import_backup.txt", "a+", encoding="utf-8") as backup:
                 json.dump(batch, backup)
                 backup.write("\n")
 
