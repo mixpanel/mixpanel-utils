@@ -1419,7 +1419,7 @@ class MixpanelUtils(object):
 
         """
         self._import_data(
-            data, self.import_api, "import", timezone_offset=timezone_offset,
+            data, self.import_api, "import", timezone_offset=timezone_offset, batch_size=2000
         )
 
     def import_people(self, data, ignore_alias=False, raw_record_import=False):
@@ -2007,6 +2007,7 @@ class MixpanelUtils(object):
         timezone_offset=None,
         ignore_alias=False,
         raw_record_import=False,
+        batch_size=50
     ):
         """Base method to import either event data or People profile data as a list of dicts or from a JSON array
         file
@@ -2029,7 +2030,6 @@ class MixpanelUtils(object):
 
         # Create a list of arguments to be used in one of the _prep functions later
         args = [{}, self.token]
-        batch_size = 2000 if endpoint == "import" else 50
 
         item_list = MixpanelUtils._list_from_argument(data)
         if not raw_record_import:
