@@ -1904,7 +1904,7 @@ class MixpanelUtils(object):
             return
 
     def _dispatch_batches(
-        self, base_url, endpoint, item_list, prep_args,
+        self, base_url, endpoint, item_list, prep_args, batch_size=50
     ):
         """Asynchronously sends batches of items to the /import, /engage, /import-events or /import-people Mixpanel API
         endpoints
@@ -1944,7 +1944,7 @@ class MixpanelUtils(object):
             else:
                 batch.append(item)
 
-            if len(batch) == 50:
+            if len(batch) == batch_size:
                 # Add an asynchronous call to _send_batch to the thread pool
                 pool.apply_async(
                     self._send_batch,
@@ -2029,6 +2029,7 @@ class MixpanelUtils(object):
 
         # Create a list of arguments to be used in one of the _prep functions later
         args = [{}, self.token]
+        batch_size = 2000 if endpoint == "import" else 50
 
         item_list = MixpanelUtils._list_from_argument(data)
         if not raw_record_import:
@@ -2042,7 +2043,7 @@ class MixpanelUtils(object):
             args = None
 
         self._dispatch_batches(
-            base_url, endpoint, item_list, args,
+            base_url, endpoint, item_list, args, batch_size=batch_size
         )
 
     def _query_jql_items(
