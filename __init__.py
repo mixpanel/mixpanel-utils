@@ -1419,7 +1419,7 @@ class MixpanelUtils(object):
 
         """
         self._import_data(
-            data, self.import_api, "import", timezone_offset=timezone_offset,
+            data, self.import_api, "import", timezone_offset=timezone_offset, batch_size=2000
         )
 
     def import_people(self, data, ignore_alias=False, raw_record_import=False):
@@ -1904,7 +1904,7 @@ class MixpanelUtils(object):
             return
 
     def _dispatch_batches(
-        self, base_url, endpoint, item_list, prep_args,
+        self, base_url, endpoint, item_list, prep_args, batch_size=50
     ):
         """Asynchronously sends batches of items to the /import, /engage, /import-events or /import-people Mixpanel API
         endpoints
@@ -1944,7 +1944,7 @@ class MixpanelUtils(object):
             else:
                 batch.append(item)
 
-            if len(batch) == 50:
+            if len(batch) == batch_size:
                 # Add an asynchronous call to _send_batch to the thread pool
                 pool.apply_async(
                     self._send_batch,
@@ -2007,6 +2007,7 @@ class MixpanelUtils(object):
         timezone_offset=None,
         ignore_alias=False,
         raw_record_import=False,
+        batch_size=50
     ):
         """Base method to import either event data or People profile data as a list of dicts or from a JSON array
         file
@@ -2042,7 +2043,7 @@ class MixpanelUtils(object):
             args = None
 
         self._dispatch_batches(
-            base_url, endpoint, item_list, args,
+            base_url, endpoint, item_list, args, batch_size=batch_size
         )
 
     def _query_jql_items(
