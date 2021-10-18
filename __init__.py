@@ -5,11 +5,13 @@ import gzip
 import io
 import logging
 import os
+import re
 import shutil
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import zipfile
 from copy import deepcopy
 from http.client import IncompleteRead
 from inspect import isfunction
@@ -1444,6 +1446,27 @@ class MixpanelUtils(object):
             raw_record_import=raw_record_import,
         )
 
+    def import_from_amplitude(self, amplitude_api_key, amplitude_api_secret, start, end):
+        """Exports all data from an Amplitude project and imports it into Mixpanel
+        
+            :param amplitude_api_key: Your Amplitude API key
+            :param amplitude_api_secret: Your Amplitude API secret
+            :param start: Date and time in the format of YYYYMMDDTHH (e.g. '20150201T05')
+            :param end: Date and time in the format of YYYYMMDDTHH (e.g. '20150203T20')
+
+            :type amplitude_api_key: string
+            :type amplitude_api_secret: string
+            :type start: string
+            :type end: string
+        """
+        amplitude_export_url = f"https://amplitude.com/api/2/export?start={start}&end={end}"
+        credentials = f"{amplitude_api_key}:{amplitude_api_secret}"
+
+        extract_data_path = self._extract_amplitude_data(amplitude_export_url, credentials)
+        transform_data_path = self._transform_and_load_amplitude_data(extract_data_path)
+
+        return
+
     """
     Private, internal methods
     """
@@ -2147,3 +2170,154 @@ class MixpanelUtils(object):
             params["output_properties"] = output_properties
 
         return self.query_jql(jql_script, params=params, format=format)
+
+    def _create_merge_event(self, event):
+        return {
+            "event": "$merge",
+            "properties": {
+                "$distinct_ids": [
+                    event["user_id"],
+                    str(event["amplitude_id"])
+                ],
+                "time": int(time.time() * 1000),
+                "distinct_id": ""
+            }
+        }
+
+    def _map_amplitude_property_to_mixpanel(self, property_name):
+        amplitude_to_mixpanel_map = {
+            "app_version": "$app_version_string",
+            "os_name": "$os",
+            "os_name": "$browser",
+            "os_version": "$os_version",
+            "device_brand": "$brand",
+            "device_manufacturer": "$manufacturer",
+            "device_model": "$model",
+            "region": "$region",
+            "city": "$city"
+        }
+        return amplitude_to_mixpanel_map.get(property_name)
+
+    def _transform_amplitude_profiles(self, amplitude_profile):
+        properties = amplitude_profile["user_properties"]
+        default_properties = {self._map_amplitude_property_to_mixpanel(key):value for key, value in amplitude_profile.items() if self._map_amplitude_property_to_mixpanel(key)}
+        profile = {
+            "$token": self.token,
+            "$distinct_id": amplitude_profile["user_id"],
+            "$ip": amplitude_profile["ip_address"],
+            "$properties": {**properties, **default_properties}
+        }
+
+        return profile
+    
+
+    def _format_amplitude_time(self, event_time):
+        for date_format in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M:%S.%f'):
+            try:
+                return datetime.datetime.strptime(event_time, date_format)
+            except ValueError:
+                pass
+        raise ValueError('No valid date format found')
+
+
+    def _transform_amplitude_events(self, amplitude_event):
+        event_dt = self._format_amplitude_time(amplitude_event["event_time"])
+
+        mixpanel_properties = {
+            # prefer user_id, then device_id, then amplitude_id
+            "distinct_id": amplitude_event.get("user_id") or amplitude_event.get("device_id") or amplitude_event["amplitude_id"],
+            "$device_id": amplitude_event["device_id"],
+            "time": int(event_dt.timestamp() * 1000),
+            "ip": amplitude_event["ip_address"],
+            "mp_country_code": amplitude_event["country"]
+        }
+
+        default_properties = {self._map_amplitude_property_to_mixpanel(key):value for key, value in amplitude_event.items() if self._map_amplitude_property_to_mixpanel(key)}
+
+        combined_properties = {**mixpanel_properties, **amplitude_event["event_properties"], **default_properties}
+
+        event = {
+            "event": amplitude_event["event_type"],
+            "properties": combined_properties
+        }
+
+        return event
+
+    def _dedupe_merge_events(self, merge_events):
+        unique_merge_events = {}
+        for event in merge_events:
+            merge_pair = (event["properties"]["$distinct_ids"][0], event["properties"]["$distinct_ids"][1])
+            if not unique_merge_events.get(merge_pair):
+                unique_merge_events[merge_pair] = event
+        
+        return list(unique_merge_events.values())
+
+    def _extract_amplitude_data(self, url, credentials):
+        zip_file_path = "./amp_data.zip"
+        data_parent_path = "./amp_data"
+        extract_path = f"{data_parent_path}/amplitude_extract"
+        req = urllib.request.Request(url)
+        encoded_credentials = base64.b64encode(credentials.encode('ascii'))
+        req.add_header('Authorization', 'Basic %s' % encoded_credentials.decode("ascii"))
+
+        try:
+            # Download zip file
+            response = urllib.request.urlopen(req)
+            with open(zip_file_path, "wb") as zip_file:
+                zip_file.write(response.read())
+
+            # Unzip file
+            with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
+                zip_ref.extractall(data_parent_path)
+
+            data_path = next(os.walk(data_parent_path))[1][0]
+            full_data_path = os.path.join(data_parent_path, data_path)
+
+            extracted_event_count = 0
+
+            # Parse all .gz data files into json files
+            for filename in os.listdir(full_data_path):
+                if filename[-3:] == ".gz":
+                    with gzip.open(os.path.join(full_data_path, filename), 'rb') as f:
+                        events = []
+                        for line in f:
+                            events.append(json.loads(line))
+                        extracted_event_count += len(events)
+                        os.makedirs(extract_path, exist_ok=True)
+                        with open(os.path.join(extract_path, filename[:-3]), "w") as extract_file:
+                            extract_file.write(json.dumps(events))
+
+            return extract_path
+        except Exception as e:
+            MixpanelUtils.LOGGER.error(
+                "Error extracting data from Amplitude", exc_info=True
+            )
+            raise e
+
+    def _transform_and_load_amplitude_data(self, extract_data_path):
+        transform_data_path = "./amp_data/amplitude_transform"
+        try:
+            total_events = 0
+            for filename in os.listdir(extract_data_path):
+                all_events = []
+                with open(os.path.join(extract_data_path, filename), "r") as extract_file:
+                    all_events = json.loads(extract_file.read())
+
+                transformed_profiles = [self._transform_amplitude_profiles(profile) for profile in all_events if profile["user_properties"]]
+                transformed_events = [self._transform_amplitude_events(event) for event in all_events]
+                merge_events = [self._create_merge_event(event) for event in all_events if event.get("user_id") and event.get("amplitude_id")]
+                
+                unique_merge_events = self._dedupe_merge_events(merge_events)
+
+                self.import_people(transformed_profiles)
+                self.import_events(transformed_events, 0)
+                self.import_events(unique_merge_events, 0)
+                total_events += len(all_events)
+            
+            print(f"Imported {total_events} events")
+
+        except:
+            MixpanelUtils.LOGGER.error(
+                "Error transforming Amplitude data", exc_info=True
+            )
+            return
