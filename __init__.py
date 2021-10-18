@@ -1462,7 +1462,7 @@ class MixpanelUtils(object):
         credentials = f"{amplitude_api_key}:{amplitude_api_secret}"
 
         extract_data_path = self._extract_amplitude_data(amplitude_export_url, credentials)
-        transform_data_path = self._transform_and_load_amplitude_data(extract_data_path)
+        self._transform_and_load_amplitude_data(extract_data_path)
 
         return
 

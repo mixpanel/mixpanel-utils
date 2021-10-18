@@ -23,6 +23,7 @@
 	* [Change a people property name](#change-a-people-property-name)
 	* [Deduplicate people profiles](#deduplicate-people-profiles)	
 	* [Query JQL API](#query-the-jql-api)
+	* [Import from Amplitude](#import-from-amplitude)
 * [Advanced scripting techniques](#advanced-scripting-techniques)
 	* [Lambda functions](#lambda-functions)
 
@@ -235,7 +236,20 @@ function main() {
 mputils.query_jql(script)
 ```
 
-Queries the JQL API. This accepts a script parameter which is a string containing the JQL query you'd like to run (see [here](https://mixpanel.com/help/reference/jql) for information on writing JQL queries). It also accepts a dictionary of global parameters (see [here](https://mixpanel.com/help/reference/jql/api-reference#api/params) for more information on JQL global parameters) by passing this dictionary into the params property. This function will return the JSON response of the JQL query as a python dictionary. 
+Queries the JQL API. This accepts a script parameter which is a string containing the JQL query you'd like to run (see [here](https://mixpanel.com/help/reference/jql) for information on writing JQL queries). It also accepts a dictionary of global parameters (see [here](https://mixpanel.com/help/reference/jql/api-reference#api/params) for more information on JQL global parameters) by passing this dictionary into the params property. This function will return the JSON response of the JQL query as a python dictionary.
+
+###### Import from Amplitude
+
+```python
+import_from_amplitude(amplitude_api_key, amplitude_api_secret, start, end)
+```
+Example:
+```python
+# start and end dates are in YYYYMMDDTHH format
+mputils.import_from_amplitude("Amplitude Key", "Amplitude Secret", "20210901T00", "20210930T23") 
+```
+
+Downloads Amplitude project data in the given time frame and imports events and profiles into your Mixpanel project. This accepts your Amplitude project key, Amplitude project sectret, a start date, and an end date. Start and end dates are in YYYYMMDDTHH format.
 
 #### Advanced scripting techniques
 
