@@ -5,7 +5,6 @@ import gzip
 import io
 import logging
 import os
-import re
 import shutil
 import time
 import urllib.error
