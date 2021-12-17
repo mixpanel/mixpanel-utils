@@ -58,6 +58,8 @@ class MixpanelUtils(object):
         max_retries=4,
         debug=False,
         eu=False,
+        password='',
+        project_id=None,
     ):
         """Initializes the MixpanelUtils object
 
@@ -91,6 +93,8 @@ class MixpanelUtils(object):
         self.read_pool_size = read_pool_size
         self.max_retries = max_retries
         self.eu = eu
+        self.password = password
+        self.project_id = project_id
         self.raw_api = (
             "https://data.mixpanel.com/api"
             if eu is False
@@ -207,6 +211,8 @@ class MixpanelUtils(object):
 
             request_url = "/".join(base + path_components)
 
+            if self.project_id:
+                params['project_id'] = self.project_id
             encoded_params = MixpanelUtils._unicode_urlencode(params)
 
             # Set up request url and body based on HTTP method and endpoint
@@ -231,7 +237,7 @@ class MixpanelUtils(object):
                 headers = {}
             headers["Authorization"] = "Basic {encoded_secret}".format(
                 encoded_secret=base64.b64encode(
-                    "{}:".format(self.api_secret).encode("utf-8")
+                    "{}:{}".format(self.api_secret, self.password).encode("utf-8")
                 ).decode("utf-8")
             )
             request = urllib.request.Request(request_url, data, headers, method=method)
