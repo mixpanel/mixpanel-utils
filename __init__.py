@@ -52,6 +52,8 @@ class MixpanelUtils(object):
         self,
         api_secret,
         token=None,
+        service_account_username=None,
+        project_id=None,
         timeout=120,
         pool_size=None,
         read_pool_size=2,
@@ -61,8 +63,10 @@ class MixpanelUtils(object):
     ):
         """Initializes the MixpanelUtils object
 
-        :param api_secret: API Secret for your project
+        :param api_secret: API Secret for your project OR your Service Account
         :param token: Project Token for your project, required for imports
+        :param service_account_username: Username for your Service Account
+        :param project_id: project id, required for Service Account authentication
         :param timeout: Time in seconds to wait for HTTP responses
         :param pool_size: Number of threads to use for sending data to Mixpanel (Default value = cpu_count * 2)
         :param read_pool_size: Separate number of threads to use just for read operations (i.e. query_engage)
@@ -72,6 +76,8 @@ class MixpanelUtils(object):
         :param eu: Is the project participating in EU residency
         :type api_secret: str
         :type token: str
+        :type service_account_username: str
+        :type project_id: int
         :type timeout: int
         :type pool_size: int
         :type read_pool_size: int
@@ -83,6 +89,10 @@ class MixpanelUtils(object):
 
         self.api_secret = api_secret
         self.token = token
+        self.service_account_username = service_account_username
+        self.project_id = project_id
+        if self.service_account_username is not None:
+            assert self.project_id, "project_id required for Service Account authentication!"
         self.timeout = timeout
         if pool_size is None:
             # Default number of threads is system dependent
@@ -204,9 +214,10 @@ class MixpanelUtils(object):
                 base = [base_url]
             else:
                 base = [base_url, str(MixpanelUtils.VERSION)]
-
             request_url = "/".join(base + path_components)
 
+            if self.service_account_username:
+                params['project_id'] = self.project_id
             encoded_params = MixpanelUtils._unicode_urlencode(params)
 
             # Set up request url and body based on HTTP method and endpoint
@@ -227,13 +238,16 @@ class MixpanelUtils(object):
             MixpanelUtils.LOGGER.debug(f"Request Method: {method}")
             MixpanelUtils.LOGGER.debug(f"Request URL: {request_url}")
 
+            if self.service_account_username:
+                basic_credentials = f"{self.service_account_username}:{self.api_secret}"
+            else:
+                basic_credentials = f"{self.api_secret}:"
+            encoded_credentials = base64.b64encode(basic_credentials.encode("utf-8")).decode("utf-8")
+
             if headers is None:
                 headers = {}
-            headers["Authorization"] = "Basic {encoded_secret}".format(
-                encoded_secret=base64.b64encode(
-                    "{}:".format(self.api_secret).encode("utf-8")
-                ).decode("utf-8")
-            )
+            headers["Authorization"] = f"Basic {encoded_credentials}"
+
             request = urllib.request.Request(request_url, data, headers, method=method)
             MixpanelUtils.LOGGER.debug(f"Request Headers: {json.dumps(headers)}")
 
@@ -1447,7 +1461,7 @@ class MixpanelUtils(object):
 
     def import_from_amplitude(self, amplitude_api_key, amplitude_api_secret, start, end):
         """Exports all data from an Amplitude project and imports it into Mixpanel
-        
+
             :param amplitude_api_key: Your Amplitude API key
             :param amplitude_api_secret: Your Amplitude API secret
             :param start: Date and time in the format of YYYYMMDDTHH (e.g. '20150201T05')
@@ -2208,7 +2222,7 @@ class MixpanelUtils(object):
         }
 
         return profile
-    
+
 
     def _format_amplitude_time(self, event_time):
         for date_format in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M:%S.%f'):
@@ -2248,7 +2262,7 @@ class MixpanelUtils(object):
             merge_pair = (event["properties"]["$distinct_ids"][0], event["properties"]["$distinct_ids"][1])
             if not unique_merge_events.get(merge_pair):
                 unique_merge_events[merge_pair] = event
-        
+
         return list(unique_merge_events.values())
 
     def _extract_amplitude_data(self, url, credentials):
@@ -2305,14 +2319,14 @@ class MixpanelUtils(object):
                 transformed_profiles = [self._transform_amplitude_profiles(profile) for profile in all_events if profile["user_properties"]]
                 transformed_events = [self._transform_amplitude_events(event) for event in all_events]
                 merge_events = [self._create_merge_event(event) for event in all_events if event.get("user_id") and event.get("amplitude_id")]
-                
+
                 unique_merge_events = self._dedupe_merge_events(merge_events)
 
                 self.import_people(transformed_profiles)
                 self.import_events(transformed_events, 0)
                 self.import_events(unique_merge_events, 0)
                 total_events += len(all_events)
-            
+
             print(f"Imported {total_events} events")
 
         except:

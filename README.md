@@ -50,7 +50,12 @@ from mixpanel_utils import MixpanelUtils
 ```
 Then create a new Mixpanel object like:
 ```python
-mputils = MixpanelUtils('API Secret', token='Token')
+mputils = MixpanelUtils(
+	'Service Account Secret',
+	service_account_username='Service Account Username',
+	project_id='Project ID',
+	token='Project Token',
+)
 ```
 And use the functions below.
 
@@ -63,13 +68,29 @@ These are functions that should allow you to complete a number of tasks with min
 
 ###### Initialization
 ```python
-__init__(api_secret, token=None, dataset_id=None, timeout=120, pool_size=None, read_pool_size=None, max_retries=10, debug=False, eu=False)
+__init__(
+	api_secret,
+	token=None,
+	service_account_username=None,
+	project_id=None,
+	timeout=120,
+	pool_size=None,
+	read_pool_size=None,
+	max_retries=10,
+	debug=False,
+	eu=False,
+)
 ```
 Example:
 ```python
-mputils = MixpanelUtils('secrethere',token='tokenhere')
+mputils = MixpanelUtils(
+	'ServiceAccountSecretHere',
+	token='ProjectTokenHere',
+	service_account_username='my-user.12345.mp-service-account',
+	project_id=1695321,
+)
 ```
-When initializing the Mixpanel class you must specify an api_secret. You may specify a token (this is required if you are importing). You may also specify timeouts for request queries (in seconds), the number of CPU cores to use with pool_size (defaults to all), the maximum number of simultaneous read connections to make with read_pool_size, and the maximum number of retries an import will attempt at a time before giving up.
+When initializing the Mixpanel class you must specify an API secret as the first parameter, either a Service Account Secret or Project API Secret. If you provide a Service Account secret, you must also provide a `service_account_username` and `project_id`. You may specify a project `token` (this is required if you are importing). You may also specify a `timeout` for request queries (in seconds), the number of CPU cores to use with `pool_size` (defaults to all), the maximum number of simultaneous read connections to make with `read_pool_size`, and the maximum number of retries an import will attempt at a time before giving up.
 
 If your project participates in EU residency, you should specify `eu=True` when initializing.
 
