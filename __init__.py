@@ -243,7 +243,7 @@ class MixpanelUtils(object):
                     if self.service_account_username:
                         request_url += f"&project_id={self.project_id}"
                 # Uncomment the line below to debug log the request body data
-                MixpanelUtils.LOGGER.debug(f"{method} data: {data}")
+                # MixpanelUtils.LOGGER.debug(f"{method} data: {data}")
             MixpanelUtils.LOGGER.debug(f"Request Method: {method}")
             MixpanelUtils.LOGGER.debug(f"Request URL: {request_url}")
 
