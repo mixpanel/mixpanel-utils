@@ -1510,23 +1510,25 @@ class MixpanelUtils(object):
         """Takes a Mixpanel API response and checks the status
 
         Logs a warning message if status is not equal to 1.
-        *Does not* raise an exception on error: if a callback in a ThreadPool apply_async
-        call throws an exception the pool will hang indefinitely
 
         :param response: A Mixpanel API JSON response
         :type response: str
 
         """
         MixpanelUtils.LOGGER.debug(f"API Response: {response}")
-        try:
-            response_data = json.loads(response)
-            if "status" in response_data:
-                if response_data["status"] != 1 and response_data["status"] != "OK":
-                    MixpanelUtils.LOGGER.warning(f"Bad API response: {response}")
-            else:
-                MixpanelUtils.LOGGER.warning(f"Bad API response: {response}")
-        except BaseException as e:
-            raise e
+        if response is not None:
+            try:
+                response_data = json.loads(response)
+                if "status" in response_data:
+                    if response_data["status"] != 1 and response_data["status"] != "OK":
+                        MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
+                else:
+                    MixpanelUtils.LOGGER.warning(f"API response NO STATUS: {response}")
+            except BaseException as e:
+                MixpanelUtils.LOGGER.warning("Exception in _async_response_handler_callback!", exc_info=True)
+                raise e
+        else:
+            MixpanelUtils.LOGGER.warning("API response EMPTY!")
 
     @staticmethod
     def _write_items_to_csv(items, output_file):
