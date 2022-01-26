@@ -217,28 +217,6 @@ class MixpanelUtils(object):
             request_url = "/".join(base + path_components)
 
             if self.service_account_username:
-                params['project_id'] = self.project_id
-            encoded_params = MixpanelUtils._unicode_urlencode(params)
-
-            # Set up request url and body based on HTTP method and endpoint
-            if method == "GET" or method == "DELETE":
-                data = None
-                request_url += "?" + encoded_params
-            else:
-                data = encoded_params
-                if (
-                    base_url == self.import_api
-                    or "import-people" in path_components
-                    or "import-events" in path_components
-                ):
-                    data += "&verbose=1"
-                # Uncomment the line below to debug log the request body data
-                # MixpanelUtils.LOGGER.debug(f"{method} data: {data}")
-                data = data.encode("utf-8")
-            MixpanelUtils.LOGGER.debug(f"Request Method: {method}")
-            MixpanelUtils.LOGGER.debug(f"Request URL: {request_url}")
-
-            if self.service_account_username:
                 basic_credentials = f"{self.service_account_username}:{self.api_secret}"
             else:
                 basic_credentials = f"{self.api_secret}:"
@@ -247,6 +225,27 @@ class MixpanelUtils(object):
             if headers is None:
                 headers = {}
             headers["Authorization"] = f"Basic {encoded_credentials}"
+
+            # Set up request url and body based on HTTP method and endpoint
+            if method == "GET" or method == "DELETE":
+                data = None
+                if self.service_account_username:
+                    params['project_id'] = self.project_id
+                request_url += "?" + MixpanelUtils._unicode_urlencode(params)
+            else:
+                if "engage" in path_components:
+                    data = MixpanelUtils._unicode_urlencode(params).encode("utf-8")
+                    request_url += "?verbose=1"
+                else:
+                    headers["Content-Type"] = "application/json"
+                    data = params["data"]
+                    request_url += "?strict=1"
+                    if self.service_account_username:
+                        request_url += f"&project_id={self.project_id}"
+                # Uncomment the line below to debug log the request body data
+                # MixpanelUtils.LOGGER.debug(f"{method} data: {data}")
+            MixpanelUtils.LOGGER.debug(f"Request Method: {method}")
+            MixpanelUtils.LOGGER.debug(f"Request URL: {request_url}")
 
             request = urllib.request.Request(request_url, data, headers, method=method)
             MixpanelUtils.LOGGER.debug(f"Request Headers: {json.dumps(headers)}")
@@ -1433,9 +1432,7 @@ class MixpanelUtils(object):
         :type timezone_offset: int | float
 
         """
-        self._import_data(
-            data, self.import_api, "import", timezone_offset=timezone_offset, batch_size=2000
-        )
+        self._import_data(data, self.import_api, "import", timezone_offset=timezone_offset)
 
     def import_people(self, data, ignore_alias=False, raw_record_import=False):
         """Imports a list of Mixpanel People profile dicts (or raw API update operations) or a file containing a JSON
@@ -1513,19 +1510,25 @@ class MixpanelUtils(object):
         """Takes a Mixpanel API response and checks the status
 
         Logs a warning message if status is not equal to 1.
-        *Does not* raise an exception on error: if a callback in a ThreadPool apply_async
-        call throws an exception the pool will hang indefinitely
 
         :param response: A Mixpanel API JSON response
         :type response: str
 
         """
-        response_data = json.loads(response)
-        if ("status" in response_data and response_data["status"] != 1) or (
-            "status" not in response_data
-        ):
-            MixpanelUtils.LOGGER.warning(f"Bad API response: {response}")
         MixpanelUtils.LOGGER.debug(f"API Response: {response}")
+        if response is not None:
+            try:
+                response_data = json.loads(response)
+                if "status" in response_data:
+                    if response_data["status"] != 1 and response_data["status"] != "OK":
+                        MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
+                else:
+                    MixpanelUtils.LOGGER.warning(f"API response NO STATUS: {response}")
+            except BaseException as e:
+                MixpanelUtils.LOGGER.warning("Exception in _async_response_handler_callback!", exc_info=True)
+                raise e
+        else:
+            MixpanelUtils.LOGGER.warning("API response EMPTY!")
 
     @staticmethod
     def _write_items_to_csv(items, output_file):
@@ -1940,7 +1943,7 @@ class MixpanelUtils(object):
             return
 
     def _dispatch_batches(
-        self, base_url, endpoint, item_list, prep_args, batch_size=50
+        self, base_url, endpoint, item_list, prep_args, batch_size=2000
     ):
         """Asynchronously sends batches of items to the /import, /engage, /import-events or /import-people Mixpanel API
         endpoints
@@ -2018,7 +2021,10 @@ class MixpanelUtils(object):
 
         """
         try:
-            params = {"data": base64.b64encode(json.dumps(batch).encode("utf-8"))}
+            data = json.dumps(batch).encode("utf-8")
+            if endpoint != "import":
+                data = base64.b64encode(data)
+            params = {"data": data}
             response = self.request(
                 base_url, [endpoint], params, "POST", retries=retries
             )
@@ -2043,7 +2049,7 @@ class MixpanelUtils(object):
         timezone_offset=None,
         ignore_alias=False,
         raw_record_import=False,
-        batch_size=50
+        batch_size=2000
     ):
         """Base method to import either event data or People profile data as a list of dicts or from a JSON array
         file
