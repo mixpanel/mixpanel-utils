@@ -2221,7 +2221,8 @@ class MixpanelUtils(object):
             "device_manufacturer": "$manufacturer",
             "device_model": "$model",
             "region": "$region",
-            "city": "$city"
+            "city": "$city",
+            "insert_id": "$insert_id"
         }
         return amplitude_to_mixpanel_map.get(property_name)
 
