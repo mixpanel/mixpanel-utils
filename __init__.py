@@ -2219,6 +2219,7 @@ class MixpanelUtils(object):
             "device_brand": "$brand",
             "device_manufacturer": "$manufacturer",
             "device_model": "$model",
+            "carrier": "$carrier",
             "region": "$region",
             "city": "$city",
             "insert_id": "$insert_id"
