@@ -2222,7 +2222,24 @@ class MixpanelUtils(object):
             "carrier": "$carrier",
             "region": "$region",
             "city": "$city",
-            "insert_id": "$insert_id"
+            "insert_id": "$insert_id",
+            "platform": "platform",
+            "dma": "dma",
+            "language": "language",
+            "price": "price",
+            "quantity": "quantity",
+            "revenue": "revenue",
+            "productId": "productId",
+            "revenueType": "revenueType",
+            "location_lat": "location_lat",
+            "location_lng": "location_lng",
+            "idfa": "idfa",
+            "idfv": "idfv",
+            "adid": "adid",
+            "android_id": "android_id",
+            "event_id": "event_id",
+            "session_id": "session_id",
+            "plan": "plan"
         }
         return amplitude_to_mixpanel_map.get(property_name)
 
