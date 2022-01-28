@@ -1516,27 +1516,35 @@ class MixpanelUtils(object):
     def _async_response_handler_callback(response):
         """Takes a Mixpanel API response and checks the status
 
-        Logs a warning message if status is not equal to 1.
+        Logs a warning message if response status is not equal to 1 or OK.
 
         :param response: A Mixpanel API JSON response
         :type response: str
 
         """
         MixpanelUtils.LOGGER.debug(f"API Response: {response}")
-        if response is not None:
+        if response:
             try:
                 response_data = json.loads(response)
                 if "status" in response_data:
                     if response_data["status"] != 1 and response_data["status"] != "OK":
                         MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
-                else:
-                    MixpanelUtils.LOGGER.warning(f"API response NO STATUS: {response}")
-            except TypeError:
-                if response != "1":
+                elif not response_data:
                     MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
+                elif response_data != 1:
+                    MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
+            except TypeError:
+                if response != 1:
+                    MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
+            except (ValueError, JSONDecodeError):
+                MixpanelUtils.LOGGER.error(f"API response could not be parsed: {response}", exc_info=True)
             except BaseException:
-                MixpanelUtils.LOGGER.error("Exception in _async_response_handler_callback!", exc_info=True)
-                raise
+                MixpanelUtils.LOGGER.error(
+                    f"Exception in _async_response_handler_callback for response: {response}",
+                    exc_info=True
+                )
+        else:
+            MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
 
     @staticmethod
     def _write_items_to_csv(items, output_file):
@@ -2223,6 +2231,7 @@ class MixpanelUtils(object):
             "region": "$region",
             "city": "$city",
             "insert_id": "$insert_id",
+            "$insert_id": "$insert_id",
             "platform": "platform",
             "dma": "dma",
             "language": "language",
