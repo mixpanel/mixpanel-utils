@@ -54,6 +54,7 @@ class MixpanelUtils(object):
         token=None,
         service_account_username=None,
         project_id=None,
+        strict_import=True,
         timeout=120,
         pool_size=None,
         read_pool_size=2,
@@ -67,6 +68,8 @@ class MixpanelUtils(object):
         :param token: Project Token for your project, required for imports
         :param service_account_username: Username for your Service Account
         :param project_id: project id, required for Service Account authentication
+        :param strict_import: When set to True (recommended), Mixpanel will validate imported events and return errors
+            per event that failed. (Default value = True)
         :param timeout: Time in seconds to wait for HTTP responses
         :param pool_size: Number of threads to use for sending data to Mixpanel (Default value = cpu_count * 2)
         :param read_pool_size: Separate number of threads to use just for read operations (i.e. query_engage)
@@ -78,6 +81,7 @@ class MixpanelUtils(object):
         :type token: str
         :type service_account_username: str
         :type project_id: int
+        :type strict_import: bool
         :type timeout: int
         :type pool_size: int
         :type read_pool_size: int
@@ -91,6 +95,7 @@ class MixpanelUtils(object):
         self.token = token
         self.service_account_username = service_account_username
         self.project_id = project_id
+        self.strict_import = strict_import
         if self.service_account_username is not None:
             assert self.project_id, "project_id required for Service Account authentication!"
         self.timeout = timeout
@@ -239,9 +244,13 @@ class MixpanelUtils(object):
                 else:
                     headers["Content-Type"] = "application/json"
                     data = params["data"]
-                    request_url += "?strict=1"
+                    query_params = {}
+                    if self.strict_import:
+                        query_params["strict"] = 1
                     if self.service_account_username:
-                        request_url += f"&project_id={self.project_id}"
+                        query_params["project_id"] = self.project_id
+                    if query_params:
+                        request_url += "?" + MixpanelUtils._unicode_urlencode(query_params)
                 # Uncomment the line below to debug log the request body data
                 # MixpanelUtils.LOGGER.debug(f"{method} data: {data}")
             MixpanelUtils.LOGGER.debug(f"Request Method: {method}")
@@ -255,11 +264,11 @@ class MixpanelUtils(object):
                 if raw_stream and base_url == self.raw_api:
                     return response
             except urllib.error.HTTPError as e:
-                MixpanelUtils.LOGGER.warning("The server couldn't fulfill the request.")
-                MixpanelUtils.LOGGER.warning(f"Error code: {e.code}")
-                MixpanelUtils.LOGGER.warning(f"Reason: {e.reason}")
+                MixpanelUtils.LOGGER.error("The server couldn't fulfill the request.")
+                MixpanelUtils.LOGGER.error(f"HTTP Error Code: {e.code}")
+                MixpanelUtils.LOGGER.error(f"Reason: {e.reason}")
                 if hasattr(e, "read"):
-                    MixpanelUtils.LOGGER.warning(f"Response: {e.read()}")
+                    MixpanelUtils.LOGGER.error(f"Response: {e.read().decode('utf-8')}")
                 if e.code >= 500:
                     # Retry if we get an HTTP 5xx error
                     MixpanelUtils.LOGGER.warning(f"Attempting retry #{retries + 1}")
@@ -272,14 +281,12 @@ class MixpanelUtils(object):
                         raw_stream=raw_stream,
                         retries=retries + 1,
                     )
-                else:
-                    raise
 
             except urllib.error.URLError as e:
-                MixpanelUtils.LOGGER.warning("We failed to reach a server.")
-                MixpanelUtils.LOGGER.warning(f"Reason: {e.reason}")
+                MixpanelUtils.LOGGER.error("We failed to reach a server.")
+                MixpanelUtils.LOGGER.error(f"Reason: {e.reason}")
                 if hasattr(e, "read"):
-                    MixpanelUtils.LOGGER.warning(f"Response: {e.read()}")
+                    MixpanelUtils.LOGGER.error(f"Response: {e.read()}")
                 MixpanelUtils.LOGGER.warning(f"Attempting retry #{retries + 1}")
                 return self.request(
                     base_url,
@@ -291,7 +298,7 @@ class MixpanelUtils(object):
                     retries=retries + 1,
                 )
             except timeout:
-                MixpanelUtils.LOGGER.warning("The read operation timed out.")
+                MixpanelUtils.LOGGER.error("The read operation timed out.")
                 self.timeout = self.timeout + 30
                 MixpanelUtils.LOGGER.warning(
                     f"Increasing timeout to {self.timeout} and attempting retry #{retries + 1}"
@@ -314,7 +321,7 @@ class MixpanelUtils(object):
                         response_data = response.read()
                     return response_data.decode("utf-8")
                 except IncompleteRead:
-                    MixpanelUtils.LOGGER.warning(
+                    MixpanelUtils.LOGGER.error(
                         f"Response data is incomplete. Attempting retry #{retries + 1}"
                     )
                     return self.request(
@@ -327,7 +334,7 @@ class MixpanelUtils(object):
                         retries=retries + 1,
                     )
         else:
-            MixpanelUtils.LOGGER.warning(
+            MixpanelUtils.LOGGER.error(
                 "Maximum retries reached. Request failed. Try again later."
             )
             raise BaseException
@@ -371,7 +378,7 @@ class MixpanelUtils(object):
         """
         assert self.token, "Project token required for People operation!"
         if profiles is not None and query_params is not None:
-            MixpanelUtils.LOGGER.warning(
+            MixpanelUtils.LOGGER.error(
                 "profiles and query_params both provided, please use one or the other"
             )
             return
@@ -1524,11 +1531,12 @@ class MixpanelUtils(object):
                         MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
                 else:
                     MixpanelUtils.LOGGER.warning(f"API response NO STATUS: {response}")
-            except BaseException as e:
-                MixpanelUtils.LOGGER.warning("Exception in _async_response_handler_callback!", exc_info=True)
-                raise e
-        else:
-            MixpanelUtils.LOGGER.warning("API response EMPTY!")
+            except TypeError:
+                if response != "1":
+                    MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
+            except BaseException:
+                MixpanelUtils.LOGGER.error("Exception in _async_response_handler_callback!", exc_info=True)
+                raise
 
     @staticmethod
     def _write_items_to_csv(items, output_file):
@@ -1549,7 +1557,7 @@ class MixpanelUtils(object):
                 props_key = "properties"
                 initial_header_value = "event"
         else:
-            MixpanelUtils.LOGGER.warning("No data to write!")
+            MixpanelUtils.LOGGER.error("No data to write!")
             return
 
         columns = [list(item[props_key].keys()) for item in items]
@@ -1704,7 +1712,7 @@ class MixpanelUtils(object):
         elif isinstance(arg, list):
             item_list = arg
         else:
-            MixpanelUtils.LOGGER.warning(
+            MixpanelUtils.LOGGER.error(
                 "data parameter must be a string filename or a list of items"
             )
 
@@ -1750,7 +1758,7 @@ class MixpanelUtils(object):
                             )
                             item_list.append(profile)
                     else:
-                        MixpanelUtils.LOGGER.warning(
+                        MixpanelUtils.LOGGER.error(
                             "Unable to determine Mixpanel data type: CSV header does not contain 'event' or '$distinct_id'"
                         )
                         return None
@@ -1920,7 +1928,7 @@ class MixpanelUtils(object):
             if compress:
                 MixpanelUtils._gzip_file(output_file)
         else:
-            MixpanelUtils.LOGGER.warning(
+            MixpanelUtils.LOGGER.error(
                 f"Invalid format must be either json or csv, got: {format}"
             )
             return
@@ -1939,7 +1947,7 @@ class MixpanelUtils(object):
         if "results" in data:
             return data
         else:
-            MixpanelUtils.LOGGER.warning(f"Invalid response from /engage: {response}")
+            MixpanelUtils.LOGGER.error(f"Invalid response from /engage: {response}")
             return
 
     def _dispatch_batches(
@@ -1968,7 +1976,7 @@ class MixpanelUtils(object):
         elif endpoint == "engage" or endpoint == "import-people":
             prep_function = MixpanelUtils._prep_params_for_profile
         else:
-            MixpanelUtils.LOGGER.warning(
+            MixpanelUtils.LOGGER.error(
                 f'endpoint must be "import", "engage", "import-events" or "import-people", found: {endpoint}'
             )
             return
@@ -2147,7 +2155,7 @@ class MixpanelUtils(object):
             elif isinstance(event_selectors, list):
                 pass
             else:
-                MixpanelUtils.LOGGER.warning(
+                MixpanelUtils.LOGGER.error(
                     f"Invalid type for event_selectors, must be dict or list, found: {type(event_selectors)}"
                 )
 
@@ -2173,14 +2181,14 @@ class MixpanelUtils(object):
             elif isinstance(user_selectors, list):
                 pass
             else:
-                MixpanelUtils.LOGGER.warning(
+                MixpanelUtils.LOGGER.error(
                     f"Invalid type for user_selectors, must be str or list, found: {type(user_selectors)}"
                 )
                 return
 
             params = {"user_selectors": user_selectors}
         else:
-            MixpanelUtils.LOGGER.warning(
+            MixpanelUtils.LOGGER.error(
                 f'Invalid data_type, must be "events" or "people", found: {data_type}'
             )
             return
@@ -2207,13 +2215,31 @@ class MixpanelUtils(object):
         amplitude_to_mixpanel_map = {
             "app_version": "$app_version_string",
             "os_name": "$os",
-            "os_name": "$browser",
             "os_version": "$os_version",
             "device_brand": "$brand",
             "device_manufacturer": "$manufacturer",
             "device_model": "$model",
+            "carrier": "$carrier",
             "region": "$region",
-            "city": "$city"
+            "city": "$city",
+            "insert_id": "$insert_id",
+            "platform": "platform",
+            "dma": "dma",
+            "language": "language",
+            "price": "price",
+            "quantity": "quantity",
+            "revenue": "revenue",
+            "productId": "productId",
+            "revenueType": "revenueType",
+            "location_lat": "location_lat",
+            "location_lng": "location_lng",
+            "idfa": "idfa",
+            "idfv": "idfv",
+            "adid": "adid",
+            "android_id": "android_id",
+            "event_id": "event_id",
+            "session_id": "session_id",
+            "plan": "plan"
         }
         return amplitude_to_mixpanel_map.get(property_name)
 

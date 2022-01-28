@@ -73,6 +73,7 @@ __init__(
 	token=None,
 	service_account_username=None,
 	project_id=None,
+	strict_import=True,
 	timeout=120,
 	pool_size=None,
 	read_pool_size=None,
