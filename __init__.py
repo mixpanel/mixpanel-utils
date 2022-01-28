@@ -1526,12 +1526,13 @@ class MixpanelUtils(object):
         if response:
             try:
                 response_data = json.loads(response)
-                if "status" in response_data:
+                if isinstance(response_data, int):
+                    if response_data != 1:
+                        MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
+                elif "status" in response_data:
                     if response_data["status"] != 1 and response_data["status"] != "OK":
                         MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
                 elif response_data is not None and not response_data:
-                    MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
-                elif response_data != 1:
                     MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
             except TypeError:
                 if response != 1:
