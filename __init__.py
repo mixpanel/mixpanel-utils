@@ -1529,7 +1529,7 @@ class MixpanelUtils(object):
                 if "status" in response_data:
                     if response_data["status"] != 1 and response_data["status"] != "OK":
                         MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
-                elif not response_data:
+                elif response_data is not None and not response_data:
                     MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
                 elif response_data != 1:
                     MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
@@ -1543,7 +1543,7 @@ class MixpanelUtils(object):
                     f"Exception in _async_response_handler_callback for response: {response}",
                     exc_info=True
                 )
-        else:
+        elif response is not None:
             MixpanelUtils.LOGGER.warning(f"API response NOT OK: {response}")
 
     @staticmethod
