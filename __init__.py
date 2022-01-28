@@ -2215,7 +2215,6 @@ class MixpanelUtils(object):
         amplitude_to_mixpanel_map = {
             "app_version": "$app_version_string",
             "os_name": "$os",
-            "os_name": "$browser",
             "os_version": "$os_version",
             "device_brand": "$brand",
             "device_manufacturer": "$manufacturer",
