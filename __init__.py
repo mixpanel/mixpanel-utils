@@ -5,6 +5,7 @@ import gzip
 import io
 import logging
 import os
+import re
 import shutil
 import time
 import urllib.error
@@ -49,18 +50,18 @@ class MixpanelUtils(object):
     """
 
     def __init__(
-        self,
-        api_secret,
-        token=None,
-        service_account_username=None,
-        project_id=None,
-        strict_import=True,
-        timeout=120,
-        pool_size=None,
-        read_pool_size=2,
-        max_retries=4,
-        debug=False,
-        eu=False,
+            self,
+            api_secret,
+            token=None,
+            service_account_username=None,
+            project_id=None,
+            strict_import=True,
+            timeout=120,
+            pool_size=None,
+            read_pool_size=2,
+            max_retries=4,
+            debug=False,
+            eu=False,
     ):
         """Initializes the MixpanelUtils object
 
@@ -128,7 +129,7 @@ class MixpanelUtils(object):
 
     @staticmethod
     def export_data(
-        data, output_file, append_mode=False, format="json", compress=False
+            data, output_file, append_mode=False, format="json", compress=False
     ):
         """Writes and optionally compresses Mixpanel data to disk in json or csv format
 
@@ -183,14 +184,14 @@ class MixpanelUtils(object):
         return {"Revenue": total}
 
     def request(
-        self,
-        base_url,
-        path_components,
-        params,
-        method="GET",
-        headers=None,
-        raw_stream=False,
-        retries=0,
+            self,
+            base_url,
+            path_components,
+            params,
+            method="GET",
+            headers=None,
+            raw_stream=False,
+            retries=0,
     ):
         """Base method for sending HTTP requests to the various Mixpanel APIs
 
@@ -340,15 +341,15 @@ class MixpanelUtils(object):
             raise BaseException
 
     def people_operation(
-        self,
-        operation,
-        value,
-        profiles=None,
-        query_params=None,
-        timezone_offset=None,
-        ignore_alias=False,
-        backup=False,
-        backup_file=None,
+            self,
+            operation,
+            value,
+            profiles=None,
+            query_params=None,
+            timezone_offset=None,
+            ignore_alias=False,
+            backup=False,
+            backup_file=None,
     ):
         """Base method for performing any of the People analytics update operations
 
@@ -416,13 +417,13 @@ class MixpanelUtils(object):
         return profile_count
 
     def people_delete(
-        self,
-        profiles=None,
-        query_params=None,
-        timezone_offset=None,
-        ignore_alias=True,
-        backup=True,
-        backup_file=None,
+            self,
+            profiles=None,
+            query_params=None,
+            timezone_offset=None,
+            ignore_alias=True,
+            backup=True,
+            backup_file=None,
     ):
         """Deletes the specified People profiles with the $delete operation and optionally creates a backup file
 
@@ -456,14 +457,14 @@ class MixpanelUtils(object):
         )
 
     def people_set(
-        self,
-        value,
-        profiles=None,
-        query_params=None,
-        timezone_offset=None,
-        ignore_alias=False,
-        backup=True,
-        backup_file=None,
+            self,
+            value,
+            profiles=None,
+            query_params=None,
+            timezone_offset=None,
+            ignore_alias=False,
+            backup=True,
+            backup_file=None,
     ):
         """Sets People properties for the specified profiles using the $set operation and optionally creates a backup file
 
@@ -499,14 +500,14 @@ class MixpanelUtils(object):
         )
 
     def people_set_once(
-        self,
-        value,
-        profiles=None,
-        query_params=None,
-        timezone_offset=None,
-        ignore_alias=False,
-        backup=False,
-        backup_file=None,
+            self,
+            value,
+            profiles=None,
+            query_params=None,
+            timezone_offset=None,
+            ignore_alias=False,
+            backup=False,
+            backup_file=None,
     ):
         """Sets People properties for the specified profiles only if the properties do not yet exist, using the $set_once
         operation and optionally creates a backup file
@@ -543,14 +544,14 @@ class MixpanelUtils(object):
         )
 
     def people_unset(
-        self,
-        value,
-        profiles=None,
-        query_params=None,
-        timezone_offset=None,
-        ignore_alias=False,
-        backup=True,
-        backup_file=None,
+            self,
+            value,
+            profiles=None,
+            query_params=None,
+            timezone_offset=None,
+            ignore_alias=False,
+            backup=True,
+            backup_file=None,
     ):
         """Unsets properties from the specified profiles using the $unset operation and optionally creates a backup file
 
@@ -587,14 +588,14 @@ class MixpanelUtils(object):
         )
 
     def people_add(
-        self,
-        value,
-        profiles=None,
-        query_params=None,
-        timezone_offset=None,
-        ignore_alias=False,
-        backup=True,
-        backup_file=None,
+            self,
+            value,
+            profiles=None,
+            query_params=None,
+            timezone_offset=None,
+            ignore_alias=False,
+            backup=True,
+            backup_file=None,
     ):
         """Increments numeric properties on the specified profiles using the $add operation and optionally creates a
         backup file
@@ -632,14 +633,14 @@ class MixpanelUtils(object):
         )
 
     def people_append(
-        self,
-        value,
-        profiles=None,
-        query_params=None,
-        timezone_offset=None,
-        ignore_alias=False,
-        backup=True,
-        backup_file=None,
+            self,
+            value,
+            profiles=None,
+            query_params=None,
+            timezone_offset=None,
+            ignore_alias=False,
+            backup=True,
+            backup_file=None,
     ):
         """Appends values to list properties on the specified profiles using the $append operation and optionally creates
         a backup file.
@@ -677,14 +678,14 @@ class MixpanelUtils(object):
         )
 
     def people_union(
-        self,
-        value,
-        profiles=None,
-        query_params=None,
-        timezone_offset=None,
-        ignore_alias=False,
-        backup=True,
-        backup_file=None,
+            self,
+            value,
+            profiles=None,
+            query_params=None,
+            timezone_offset=None,
+            ignore_alias=False,
+            backup=True,
+            backup_file=None,
     ):
         """Union a list of values with list properties on the specified profiles using the $union operation and optionally
         create a backup file
@@ -722,14 +723,14 @@ class MixpanelUtils(object):
         )
 
     def people_remove(
-        self,
-        value,
-        profiles=None,
-        query_params=None,
-        timezone_offset=None,
-        ignore_alias=False,
-        backup=True,
-        backup_file=None,
+            self,
+            value,
+            profiles=None,
+            query_params=None,
+            timezone_offset=None,
+            ignore_alias=False,
+            backup=True,
+            backup_file=None,
     ):
         """Removes values from list properties on the specified profiles using the $remove operation and optionally
         creates a backup file
@@ -767,16 +768,16 @@ class MixpanelUtils(object):
         )
 
     def people_change_property_name(
-        self,
-        old_name,
-        new_name,
-        profiles=None,
-        query_params=None,
-        timezone_offset=None,
-        ignore_alias=False,
-        backup=True,
-        backup_file=None,
-        unset=True,
+            self,
+            old_name,
+            new_name,
+            profiles=None,
+            query_params=None,
+            timezone_offset=None,
+            ignore_alias=False,
+            backup=True,
+            backup_file=None,
+            unset=True,
     ):
         """Copies the value of an existing property into a new property and optionally unsets the existing property.
         Optionally creates a backup file.
@@ -831,13 +832,13 @@ class MixpanelUtils(object):
         return profile_count
 
     def people_revenue_property_from_transactions(
-        self,
-        profiles=None,
-        query_params=None,
-        timezone_offset=None,
-        ignore_alias=False,
-        backup=True,
-        backup_file=None,
+            self,
+            profiles=None,
+            query_params=None,
+            timezone_offset=None,
+            ignore_alias=False,
+            backup=True,
+            backup_file=None,
     ):
         """Creates a property named 'Revenue' for the specified profiles by summing their $transaction $amounts and
         optionally creates a backup file
@@ -876,13 +877,13 @@ class MixpanelUtils(object):
         )
 
     def deduplicate_people(
-        self,
-        profiles=None,
-        prop_to_match="$email",
-        merge_props=False,
-        case_sensitive=False,
-        backup=True,
-        backup_file=None,
+            self,
+            profiles=None,
+            prop_to_match="$email",
+            merge_props=False,
+            case_sensitive=False,
+            backup=True,
+            backup_file=None,
     ):
         """Determines duplicate profiles based on the value of a specified property. The profile with the latest
         $last_seen is kept and the others are deleted. Optionally adds any properties from the profiles to be deleted to
@@ -1014,14 +1015,14 @@ class MixpanelUtils(object):
             return response
 
     def jql_operation(
-        self,
-        jql_script,
-        people_operation,
-        update_value=lambda x: x["value"],
-        jql_params=None,
-        ignore_alias=False,
-        backup=True,
-        backup_file=None,
+            self,
+            jql_script,
+            people_operation,
+            update_value=lambda x: x["value"],
+            jql_params=None,
+            ignore_alias=False,
+            backup=True,
+            backup_file=None,
     ):
         """Perform a JQL query to return a JSON array of objects that can then be used to dynamically construct People
             updates via the update_value
@@ -1094,15 +1095,15 @@ class MixpanelUtils(object):
         return self.jql_operation(jql_script, "$set", jql_params=params, backup=False)
 
     def export_jql_events(
-        self,
-        output_file,
-        from_date,
-        to_date,
-        event_selectors=None,
-        output_properties=None,
-        timezone_offset=0,
-        format="json",
-        compress=False,
+            self,
+            output_file,
+            from_date,
+            to_date,
+            event_selectors=None,
+            output_properties=None,
+            timezone_offset=0,
+            format="json",
+            compress=False,
     ):
         """Export events to disk via JQL. Optional whitelist of properties to include in the output.
 
@@ -1137,12 +1138,12 @@ class MixpanelUtils(object):
         self._export_jql_items(events, output_file, format=format, compress=compress)
 
     def export_jql_people(
-        self,
-        output_file,
-        user_selectors=None,
-        output_properties=None,
-        format="json",
-        compress=False,
+            self,
+            output_file,
+            user_selectors=None,
+            output_properties=None,
+            format="json",
+            compress=False,
     ):
         """Export People profiles to disk via JQL by providing a single selector string or a list of selector dicts.
         Optional whitelist of properties to include in the output.
@@ -1170,13 +1171,13 @@ class MixpanelUtils(object):
         )
 
     def query_jql_events(
-        self,
-        from_date,
-        to_date,
-        event_selectors=None,
-        timezone_offset=0,
-        output_properties=None,
-        format="json",
+            self,
+            from_date,
+            to_date,
+            event_selectors=None,
+            timezone_offset=0,
+            output_properties=None,
+            format="json",
     ):
         """Query JQL for events. Optional whitelist of properties to include in the output.
 
@@ -1206,7 +1207,7 @@ class MixpanelUtils(object):
         )
 
     def query_jql_people(
-        self, user_selectors=None, output_properties=None, format="json"
+            self, user_selectors=None, output_properties=None, format="json"
     ):
         """Query JQL for profiles by providing a single selector string or a list of selector dicts.
         Optional whitelist of properties to include in the output.
@@ -1297,16 +1298,16 @@ class MixpanelUtils(object):
         return engage_paginator.fetch_all(params)
 
     def export_events(
-        self,
-        output_file,
-        params,
-        format="json",
-        timezone_offset=None,
-        add_gzip_header=False,
-        compress=False,
-        request_per_day=False,
-        raw_stream=False,
-        buffer_size=1024,
+            self,
+            output_file,
+            params,
+            format="json",
+            timezone_offset=None,
+            add_gzip_header=False,
+            compress=False,
+            request_per_day=False,
+            raw_stream=False,
+            buffer_size=1024,
     ):
         """Queries the /export API and writes the Mixpanel event data to disk as a JSON or CSV file. Optionally gzip file.
 
@@ -1355,8 +1356,8 @@ class MixpanelUtils(object):
             if request_per_day:
                 d = time.strptime(params["from_date"], date_format)
                 current_day = (
-                    datetime.date(d.tm_year, d.tm_mon, d.tm_mday)
-                    + datetime.timedelta(x)
+                        datetime.date(d.tm_year, d.tm_mon, d.tm_mday)
+                        + datetime.timedelta(x)
                 ).strftime(date_format)
                 file_components = output_file.split(".")
                 current_file = file_components[0] + "_" + current_day
@@ -1394,12 +1395,12 @@ class MixpanelUtils(object):
             self.timeout = timeout_backup
 
     def export_people(
-        self,
-        output_file,
-        params=None,
-        timezone_offset=None,
-        format="json",
-        compress=False,
+            self,
+            output_file,
+            params=None,
+            timezone_offset=None,
+            format="json",
+            compress=False,
     ):
         """Queries the /engage API and writes the Mixpanel People profile data to disk as a JSON or CSV file. Optionally
         gzip file.
@@ -1633,12 +1634,12 @@ class MixpanelUtils(object):
 
     @staticmethod
     def _event_object_from_csv_row(
-        row,
-        header,
-        event_index=None,
-        distinct_id_index=None,
-        time_index=None,
-        time_converter=None,
+            row,
+            header,
+            event_index=None,
+            distinct_id_index=None,
+            time_index=None,
+            time_converter=None,
     ):
         """Converts a row from a csv file into a Mixpanel event dict
 
@@ -1821,7 +1822,7 @@ class MixpanelUtils(object):
         # The /import API requires a 'time' and 'distinct_id' property, if either of those are missing we dump that
         # event to a log of invalid events and return
         if ("time" not in event["properties"]) or (
-            "distinct_id" not in event["properties"]
+                "distinct_id" not in event["properties"]
         ):
             MixpanelUtils.LOGGER.warning(
                 "Event missing time or distinct_id property, dumping to invalid_events.txt"
@@ -1840,7 +1841,7 @@ class MixpanelUtils(object):
 
     @staticmethod
     def _prep_params_for_profile(
-        profile, token, operation, value, ignore_alias, dynamic
+            profile, token, operation, value, ignore_alias, dynamic
     ):
         """Takes a People profile dict and returns the parameters for an /engage API update
 
@@ -1960,7 +1961,7 @@ class MixpanelUtils(object):
             return
 
     def _dispatch_batches(
-        self, base_url, endpoint, item_list, prep_args, batch_size=2000
+            self, base_url, endpoint, item_list, prep_args, batch_size=2000
     ):
         """Asynchronously sends batches of items to the /import, /engage, /import-events or /import-people Mixpanel API
         endpoints
@@ -2021,7 +2022,7 @@ class MixpanelUtils(object):
         pool.join()
 
     def _send_batch(
-        self, base_url, endpoint, batch, retries=0,
+            self, base_url, endpoint, batch, retries=0,
     ):
         """POST a single batch of data to a Mixpanel API and return the response
 
@@ -2059,14 +2060,14 @@ class MixpanelUtils(object):
                 backup.write("\n")
 
     def _import_data(
-        self,
-        data,
-        base_url,
-        endpoint,
-        timezone_offset=None,
-        ignore_alias=False,
-        raw_record_import=False,
-        batch_size=2000
+            self,
+            data,
+            base_url,
+            endpoint,
+            timezone_offset=None,
+            ignore_alias=False,
+            raw_record_import=False,
+            batch_size=2000
     ):
         """Base method to import either event data or People profile data as a list of dicts or from a JSON array
         file
@@ -2106,15 +2107,15 @@ class MixpanelUtils(object):
         )
 
     def _query_jql_items(
-        self,
-        data_type,
-        from_date=None,
-        to_date=None,
-        event_selectors=None,
-        user_selectors=None,
-        output_properties=None,
-        timezone_offset=0,
-        format="json",
+            self,
+            data_type,
+            from_date=None,
+            to_date=None,
+            event_selectors=None,
+            user_selectors=None,
+            output_properties=None,
+            timezone_offset=0,
+            format="json",
     ):
         """Base method for querying jql for events or People
 
@@ -2255,7 +2256,8 @@ class MixpanelUtils(object):
 
     def _transform_amplitude_profiles(self, amplitude_profile):
         properties = amplitude_profile["user_properties"]
-        default_properties = {self._map_amplitude_property_to_mixpanel(key):value for key, value in amplitude_profile.items() if self._map_amplitude_property_to_mixpanel(key)}
+        default_properties = {self._map_amplitude_property_to_mixpanel(key): value for key, value in
+                              amplitude_profile.items() if self._map_amplitude_property_to_mixpanel(key)}
         profile = {
             "$token": self.token,
             "$distinct_id": amplitude_profile["user_id"],
@@ -2265,7 +2267,6 @@ class MixpanelUtils(object):
 
         return profile
 
-
     def _format_amplitude_time(self, event_time):
         for date_format in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M:%S.%f'):
             try:
@@ -2274,20 +2275,25 @@ class MixpanelUtils(object):
                 pass
         raise ValueError('No valid date format found')
 
-
     def _transform_amplitude_events(self, amplitude_event):
         event_dt = self._format_amplitude_time(amplitude_event["event_time"])
 
         mixpanel_properties = {
             # prefer user_id, then device_id, then amplitude_id
-            "distinct_id": amplitude_event.get("user_id") or amplitude_event.get("device_id") or amplitude_event["amplitude_id"],
+            "distinct_id": amplitude_event.get("user_id") or amplitude_event.get("device_id") or amplitude_event[
+                "amplitude_id"],
             "$device_id": amplitude_event["device_id"],
             "time": int(event_dt.timestamp() * 1000),
             "ip": amplitude_event["ip_address"],
             "mp_country_code": amplitude_event["country"]
         }
 
-        default_properties = {self._map_amplitude_property_to_mixpanel(key):value for key, value in amplitude_event.items() if self._map_amplitude_property_to_mixpanel(key)}
+        default_properties = {
+            self._map_amplitude_property_to_mixpanel(key): value for key, value in amplitude_event.items()
+            if self._map_amplitude_property_to_mixpanel(key)
+        }
+        if "$insert_id" in default_properties:
+            default_properties["$insert_id"] = re.sub(r"[^a-zA-Z0-9-]", "", default_properties["$insert_id"])
 
         combined_properties = {**mixpanel_properties, **amplitude_event["event_properties"], **default_properties}
 
@@ -2358,9 +2364,11 @@ class MixpanelUtils(object):
                 with open(os.path.join(extract_data_path, filename), "r") as extract_file:
                     all_events = json.loads(extract_file.read())
 
-                transformed_profiles = [self._transform_amplitude_profiles(profile) for profile in all_events if profile["user_properties"]]
+                transformed_profiles = [self._transform_amplitude_profiles(profile) for profile in all_events if
+                                        profile["user_properties"]]
                 transformed_events = [self._transform_amplitude_events(event) for event in all_events]
-                merge_events = [self._create_merge_event(event) for event in all_events if event.get("user_id") and event.get("amplitude_id")]
+                merge_events = [self._create_merge_event(event) for event in all_events if
+                                event.get("user_id") and event.get("amplitude_id")]
 
                 unique_merge_events = self._dedupe_merge_events(merge_events)
 
