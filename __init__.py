@@ -233,16 +233,13 @@ class MixpanelUtils(object):
             headers["Authorization"] = f"Basic {encoded_credentials}"
 
             # Set up request url and body based on HTTP method and endpoint
+            if self.service_account_username:
+                params['project_id'] = self.project_id
             if method == "GET" or method == "DELETE":
                 data = None
-                if self.service_account_username:
-                    params['project_id'] = self.project_id
                 request_url += "?" + MixpanelUtils._unicode_urlencode(params)
             else:
-                if "engage" in path_components:
-                    data = MixpanelUtils._unicode_urlencode(params).encode("utf-8")
-                    request_url += "?verbose=1"
-                else:
+                if "import" in path_components:
                     headers["Content-Type"] = "application/json"
                     data = params["data"]
                     query_params = {}
@@ -252,6 +249,10 @@ class MixpanelUtils(object):
                         query_params["project_id"] = self.project_id
                     if query_params:
                         request_url += "?" + MixpanelUtils._unicode_urlencode(query_params)
+                else:
+                    data = MixpanelUtils._unicode_urlencode(params).encode("utf-8")
+                    if "engage" in path_components:
+                        request_url += "?verbose=1"
                 # Uncomment the line below to debug log the request body data
                 # MixpanelUtils.LOGGER.debug(f"{method} data: {data}")
             MixpanelUtils.LOGGER.debug(f"Request Method: {method}")
