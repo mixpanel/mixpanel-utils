@@ -2262,7 +2262,7 @@ class MixpanelUtils(object):
         profile = {
             "$token": self.token,
             "$distinct_id": amplitude_profile["user_id"],
-            "$ip": amplitude_profile["ip_address"],
+            "$ip": amplitude_profile["ip_address"] if "ip_address" in amplitude_profile else "0.0.0.0",
             "$properties": {**properties, **default_properties}
         }
 
@@ -2285,8 +2285,8 @@ class MixpanelUtils(object):
                 "amplitude_id"],
             "$device_id": amplitude_event["device_id"],
             "time": int(event_dt.timestamp() * 1000),
-            "ip": amplitude_event["ip_address"],
-            "mp_country_code": amplitude_event["country"]
+            "ip": amplitude_event["ip_address"] if "ip_address" in amplitude_event else "0.0.0.0",
+            "mp_country_code": amplitude_event["country"] if "country" in amplitude_event else "Unknown"
         }
 
         default_properties = {
