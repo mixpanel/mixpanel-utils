@@ -2372,7 +2372,7 @@ class MixpanelUtils(object):
                                 event.get("user_id") and event.get("amplitude_id")]
 
                 unique_merge_events = self._dedupe_merge_events(merge_events)
-
+                print("Importing %s" % filename)
                 self.import_people(transformed_profiles)
                 self.import_events(transformed_events, 0)
                 self.import_events(unique_merge_events, 0)
