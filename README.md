@@ -134,7 +134,10 @@ import_people(data, ignore_alias=False, dataset_version=None, raw_record_import=
 ```
 Example:
 ```python
-mputils.import_people('people_export.txt')
+mputils.import_people('people_export.txt') 
+# Example with list of objects
+listofprofiles = [{"$distinct_id": "user1","$properties": {"test_prop":"abc","test_prop2":"efg"}},{"$distinct_id": "user2","$properties": { "test":"123"}}]
+mputils.import_people(listofprofiles)
 ```
 imports people using the engage endpoint. The data parameter is expected to be a filename or a list of objects. The file should be either in CSV or JSON format. The list should be a list of JSON objects (as in an engage export). By default import people checks to see if the distinct_ids specified are aliased. You may specify you wish to ignore alias using ignore_alias=True. If the import is composed of raw engage API updates you may choose to turn on the raw_record_import flag. The dataset_version parameter is for if you wish to import people profiles into a dataset. See the section on [importing into datasets](#importing-data-into-a-dataset) for more information. This method ignores time and IP (so the people profile’s last seen and location will not be updated). 
 
