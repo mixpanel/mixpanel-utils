@@ -1995,7 +1995,7 @@ class MixpanelUtils(object):
         for item in item_list:
             if prep_args is not None:
                 # Insert the given item as the first argument to be passed to the _prep function determined above
-                prep_args[0] = item
+                prep_args[0] = { "$distinct_id": item }
                 params = prep_function(*prep_args)
                 if params:
                     batch.append(params)
