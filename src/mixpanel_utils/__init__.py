@@ -20,7 +20,7 @@ from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
 from socket import timeout
 
-from .paginator import ConcurrentPaginator
+from tools.paginator import ConcurrentPaginator
 
 try:
     import ujson as json
