@@ -62,5 +62,3 @@ docs/_build/
 # PyBuilder
 target/
 
-# Vritual Environment
-.venv/
