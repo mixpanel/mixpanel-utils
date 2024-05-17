@@ -4,7 +4,7 @@ setup(
     name='mixpanel-utils',
     packages=['mixpanel_utils'],
     package_dir={'':'src'},
-    version='2.2.5',
+    version='2.2.6',
     description='Utilities-only module for exporting and importing data into Mixpanel. NOT for server-side app tracking.',
     long_description='A utilities-only module for exporting and importing data into Mixpanel via their APIs. This is NOT for server-side app tracking.',
     author='Jared McFarland',

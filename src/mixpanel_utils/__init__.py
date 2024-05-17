@@ -1486,6 +1486,27 @@ class MixpanelUtils(object):
 
         return
 
+    def import_from_amplitude_id_mgmt_v3(self, amplitude_api_key, amplitude_api_secret, start, end):
+        """Exports all data from an Amplitude project and imports it into Mixpanel
+
+            :param amplitude_api_key: Your Amplitude API key
+            :param amplitude_api_secret: Your Amplitude API secret
+            :param start: Date and time in the format of YYYYMMDDTHH (e.g. '20150201T05')
+            :param end: Date and time in the format of YYYYMMDDTHH (e.g. '20150203T20')
+
+            :type amplitude_api_key: string
+            :type amplitude_api_secret: string
+            :type start: string
+            :type end: string
+        """
+        amplitude_export_url = f"https://amplitude.com/api/2/export?start={start}&end={end}"
+        credentials = f"{amplitude_api_key}:{amplitude_api_secret}"
+
+        extract_data_path = self._extract_amplitude_data(amplitude_export_url, credentials)
+        self._transform_and_load_amplitude_data_id_mgmt_v3(extract_data_path)
+
+        return
+
     """
     Private, internal methods
     """
@@ -1741,13 +1762,13 @@ class MixpanelUtils(object):
         """
         item_list = []
         try:
-            with open(filename, "rbU") as item_file:
+            with open(filename, "rb") as item_file:
                 # First try loading it as a JSON list
                 item_list = json.load(item_file)
         except JSONDecodeError as e:
             if "Expecting value" in str(e):
                 # Based on the error message, try to treat it as CSV
-                with open(filename, "rU", encoding="utf-8") as item_file:
+                with open(filename, "r", encoding="utf-8") as item_file:
                     reader = csv.reader(item_file)
                     header = next(reader)
                     # Determine if the data is events or profiles based on keys in the header.
@@ -1776,7 +1797,7 @@ class MixpanelUtils(object):
             else:
                 # Try treating the file as newline delimited JSON objects
                 item_list = []
-                with open(filename, "rbU") as item_file:
+                with open(filename, "rb") as item_file:
                     for item in item_file:
                         item_list.append(json.loads(item))
         except IOError:
@@ -2259,6 +2280,8 @@ class MixpanelUtils(object):
         properties = amplitude_profile["user_properties"]
         default_properties = {self._map_amplitude_property_to_mixpanel(key): value for key, value in
                               amplitude_profile.items() if self._map_amplitude_property_to_mixpanel(key)}
+        if amplitude_profile["user_properties"]["Name"]:
+            default_properties["$name"] = amplitude_profile["user_properties"]["Name"]
         profile = {
             "$token": self.token,
             "$distinct_id": amplitude_profile["user_id"],
@@ -2287,6 +2310,37 @@ class MixpanelUtils(object):
             "time": int(event_dt.timestamp() * 1000),
             "ip": amplitude_event["ip_address"],
             "mp_country_code": amplitude_event["country"]
+        }
+
+        default_properties = {
+            self._map_amplitude_property_to_mixpanel(key): value for key, value in amplitude_event.items()
+            if self._map_amplitude_property_to_mixpanel(key)
+        }
+        if "$insert_id" in default_properties:
+            default_properties["$insert_id"] = re.sub(r"[^a-zA-Z0-9-]", "", default_properties["$insert_id"])
+
+        combined_properties = {**mixpanel_properties, **amplitude_event["event_properties"], **default_properties}
+
+        event = {
+            "event": amplitude_event["event_type"],
+            "properties": combined_properties
+        }
+
+        return event
+
+    def _transform_amplitude_events_id_mgmt_v3(self, amplitude_event):
+        event_dt = self._format_amplitude_time(amplitude_event["event_time"])
+
+        no_user_id_fallback = amplitude_event.get("device_id") or amplitude_event["amplitude_id"]
+
+        mixpanel_properties = {
+            "distinct_id": amplitude_event.get("user_id") or amplitude_event.get("device_id") or amplitude_event["amplitude_id"],
+            "$device_id": amplitude_event["device_id"],
+            "time": int(event_dt.timestamp() * 1000),
+            "ip": amplitude_event["ip_address"],
+            "mp_country_code": amplitude_event["country"],
+            "source": "amplitude",
+            "$user_id": amplitude_event.get("user_id") or amplitude_event.get("user_properties").get("user_id") or no_user_id_fallback,
         }
 
         default_properties = {
@@ -2372,6 +2426,45 @@ class MixpanelUtils(object):
                                 event.get("user_id") and event.get("amplitude_id")]
 
                 unique_merge_events = self._dedupe_merge_events(merge_events)
+
+                self.import_people(transformed_profiles)
+                self.import_events(transformed_events, 0)
+                self.import_events(unique_merge_events, 0)
+                total_events += len(all_events)
+
+            print(f"Imported {total_events} events")
+
+        except:
+            MixpanelUtils.LOGGER.error(
+                "Error transforming Amplitude data", exc_info=True
+            )
+            return
+
+    def _transform_and_load_amplitude_data_id_mgmt_v3(self, extract_data_path):
+        transform_data_path = "./amp_data/amplitude_transform"
+        try:
+            total_events = 0
+            for filename in os.listdir(extract_data_path):
+                all_events = []
+                with open(
+                    os.path.join(extract_data_path, filename), "r"
+                ) as extract_file:
+                    all_events = json.loads(extract_file.read())
+
+                transformed_profiles = [
+                    self._transform_amplitude_profiles(profile)
+                    for profile in all_events
+                    if profile["user_properties"]
+                ]
+                transformed_events = [
+                    self._transform_amplitude_events_id_mgmt_v3(event) for event in all_events
+                ]
+
+                unique_merge_events = [
+                    self._create_merge_event(event)
+                    for event in all_events
+                    if event.get("user_id") and event.get("amplitude_id")
+                ]
 
                 self.import_people(transformed_profiles)
                 self.import_events(transformed_events, 0)
