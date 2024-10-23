@@ -113,7 +113,7 @@ export_events(output_file, params, format='json', timezone_offset=None, add_gzip
 Example:
 
 ```python
-mputils.export_events('event_export.txt',{'from_date':'2016-01-01','to_date':'2016-01-01','event':'["App Install"]'})
+mputils.export_events('event_export.txt',{'from_date':'2016-01-01','to_date':'2016-01-01','event':'["App Install"]','time_in_ms':True})
 ```
 
 Exports raw events and writes them to a file using the export endpoint. You must specify the file, the export params (see [here](https://mixpanel.com/help/reference/exporting-raw-data#export-api-reference) for full list of parameters) and the format (default is JSON). Current supported formats are json or csv. You may also add a timezone_offset which should be the offset from UTC the project is in. This modifies the time property so it is in unix time. You can also specify that you wish to receive the files as gzip from our servers using the add_gzip_header option. This is recommended if you believe the export will be large as it can significantly improve transfer time. You may also specify whether you wish to gzip the data after receiving it using the compress option
