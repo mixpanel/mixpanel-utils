@@ -61,7 +61,7 @@ class MixpanelUtils(object):
             read_pool_size=2,
             max_retries=4,
             debug=False,
-            eu=False,
+            residency="us",
     ):
         """Initializes the MixpanelUtils object
 
@@ -77,7 +77,7 @@ class MixpanelUtils(object):
             (Default value = 2)
         :param max_retries: Maximum number of times to retry when a 5xx HTTP response is received (Default value = 4)
         :param debug: Enable debug logging
-        :param eu: Is the project participating in EU residency
+        :param residency: residency for your project. Accepts "us", "eu", or "in". (Default value = "us")
         :type api_secret: str
         :type token: str
         :type service_account_username: str
@@ -88,7 +88,7 @@ class MixpanelUtils(object):
         :type read_pool_size: int
         :type max_retries: int
         :type debug: bool
-        :type eu: bool
+        :type residency: str
 
         """
 
@@ -106,17 +106,21 @@ class MixpanelUtils(object):
         self.pool_size = pool_size
         self.read_pool_size = read_pool_size
         self.max_retries = max_retries
-        self.eu = eu
+        self.residency = residency
         self.raw_api = (
-            "https://data.mixpanel.com/api"
-            if eu is False
-            else "https://data-eu.mixpanel.com/api"
+            "https://data.mixpanel.com/api" if residency is "us"
+            else "https://data-eu.mixpanel.com/api" if residency is "eu"
+            else "https://data-in.mixpanel.com/api"
         )
         self.import_api = (
-            "https://api.mixpanel.com" if eu is False else "https://api-eu.mixpanel.com"
+            "https://api.mixpanel.com" if residency is "us" 
+            else "https://api-eu.mixpanel.com" if residency is "eu"
+            else "https://api-in.mixpanel.com"
         )
         self.formatted_api = (
-            "https://mixpanel.com/api" if eu is False else "https://eu.mixpanel.com/api"
+            "https://mixpanel.com/api" if residency is "us" 
+            else "https://eu.mixpanel.com/api" if residency is "eu"
+            else "https://in.mixpanel.com/api"
         )
         log_level = MixpanelUtils.LOGGER.getEffectiveLevel()
         """ The logger is a singleton for the MixpanelUtils class, so multiple instances of the MixpanelUtils class will use the
