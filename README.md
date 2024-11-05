@@ -84,7 +84,7 @@ __init__(
 	read_pool_size=None,
 	max_retries=10,
 	debug=False,
-	eu=False,
+	residency='us',
 )
 ```
 
