@@ -101,7 +101,7 @@ mputils = MixpanelUtils(
 
 When initializing the Mixpanel class you must specify an API secret as the first parameter, either a Service Account Secret or Project API Secret. If you provide a Service Account secret, you must also provide a `service_account_username` and `project_id`. You may specify a project `token` (this is required if you are importing). You may also specify a `timeout` for request queries (in seconds), the number of CPU cores to use with `pool_size` (defaults to all), the maximum number of simultaneous read connections to make with `read_pool_size`, and the maximum number of retries an import will attempt at a time before giving up.
 
-If your project participates in EU residency, you should specify `residency="eu"` when initializing. If your project participates in India residency, you should specify `residency="in"` when initializing.
+If your project participates in EU residency, you should specify `residency='eu'` when initializing. If your project participates in India residency, you should specify `residency='in'` when initializing.
 
 
 ###### Export events
