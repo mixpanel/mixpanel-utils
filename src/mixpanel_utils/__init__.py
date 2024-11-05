@@ -107,19 +107,21 @@ class MixpanelUtils(object):
         self.read_pool_size = read_pool_size
         self.max_retries = max_retries
         self.residency = residency
+        residency_values = ["us","eu","in"]
+        assert self.residency in residency_values, "residency value must be 'us', 'eu, or 'in'!"
         self.raw_api = (
-            "https://data.mixpanel.com/api" if residency is "us"
-            else "https://data-eu.mixpanel.com/api" if residency is "eu"
+            "https://data.mixpanel.com/api" if residency == "us"
+            else "https://data-eu.mixpanel.com/api" if residency == "eu"
             else "https://data-in.mixpanel.com/api"
         )
         self.import_api = (
-            "https://api.mixpanel.com" if residency is "us" 
-            else "https://api-eu.mixpanel.com" if residency is "eu"
+            "https://api.mixpanel.com" if residency == "us" 
+            else "https://api-eu.mixpanel.com" if residency == "eu"
             else "https://api-in.mixpanel.com"
         )
         self.formatted_api = (
             "https://mixpanel.com/api" if residency is "us" 
-            else "https://eu.mixpanel.com/api" if residency is "eu"
+            else "https://eu.mixpanel.com/api" if residency == "eu"
             else "https://in.mixpanel.com/api"
         )
         log_level = MixpanelUtils.LOGGER.getEffectiveLevel()
