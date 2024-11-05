@@ -120,7 +120,7 @@ class MixpanelUtils(object):
             else "https://api-in.mixpanel.com"
         )
         self.formatted_api = (
-            "https://mixpanel.com/api" if residency is "us" 
+            "https://mixpanel.com/api" if residency == "us" 
             else "https://eu.mixpanel.com/api" if residency == "eu"
             else "https://in.mixpanel.com/api"
         )
