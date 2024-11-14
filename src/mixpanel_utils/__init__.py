@@ -111,18 +111,15 @@ class MixpanelUtils(object):
         assert self.residency in residency_values, "residency value must be 'us', 'eu, or 'in'!"
         self.raw_api = (
             "https://data.mixpanel.com/api" if residency == "us"
-            else "https://data-eu.mixpanel.com/api" if residency == "eu"
-            else "https://data-in.mixpanel.com/api"
+            else f"https://data-{residency}.mixpanel.com/api"
         )
         self.import_api = (
             "https://api.mixpanel.com" if residency == "us" 
-            else "https://api-eu.mixpanel.com" if residency == "eu"
-            else "https://api-in.mixpanel.com"
+            else f"https://api-{residency}.mixpanel.com"
         )
         self.formatted_api = (
             "https://mixpanel.com/api" if residency == "us" 
-            else "https://eu.mixpanel.com/api" if residency == "eu"
-            else "https://in.mixpanel.com/api"
+            else f"https://{residency}.mixpanel.com/api"
         )
         log_level = MixpanelUtils.LOGGER.getEffectiveLevel()
         """ The logger is a singleton for the MixpanelUtils class, so multiple instances of the MixpanelUtils class will use the
