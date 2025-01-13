@@ -1364,7 +1364,7 @@ class MixpanelUtils(object):
                         + datetime.timedelta(x)
                 ).strftime(date_format)
                 base, ext = os.path.splitext(output_file)
-                current_file = base + "_" + current_day + '.' + ext
+                current_file = base + "_" + current_day + ext
                 params_copy["from_date"] = current_day
                 params_copy["to_date"] = current_day
 
