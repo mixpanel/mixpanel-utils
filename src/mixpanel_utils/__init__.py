@@ -1363,10 +1363,8 @@ class MixpanelUtils(object):
                         datetime.date(d.tm_year, d.tm_mon, d.tm_mday)
                         + datetime.timedelta(x)
                 ).strftime(date_format)
-                file_components = output_file.split(".")
-                current_file = file_components[0] + "_" + current_day
-                if len(file_components) > 1:
-                    current_file = current_file + "." + file_components[1]
+                base, ext = os.path.splitext(output_file)
+                current_file = base + "_" + current_day + ext
                 params_copy["from_date"] = current_day
                 params_copy["to_date"] = current_day
 
