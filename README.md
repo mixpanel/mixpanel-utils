@@ -385,7 +385,7 @@ Sets group properties to a specific value using the /group endpoint. This should
 
 **Note:** for any sort of update/delete operation, the `group_key` needs to be defined (available in your project settings). Similar to the /export_groups function, if instead of passing a list of group profiles, you pass query params, the `data_group_id` must also be defined (also in project settings). You can define either or both when initializing the `MixpanelUtils` instance as a parameter, or, you can define it before each execution via the `define_group_context` function. The latter can be helpful if you have multiple type of group profiles (say company_id vs team_id), you are sending multiple update operations and you need to switch the context between them.
 
-The name of this backup profile by default will be name backup*{timestamp}.json where timestamp is the current time in epoch time. You may also provide a backup file name using the backup_file parameter.
+The name of this backup profile by default will be name backup_{timestamp}.json where timestamp is the current time in epoch time. You may also provide a backup file name using the backup_file parameter.
 
 ###### Group delete
 
@@ -405,7 +405,7 @@ Deletes group profiles using the /groups endpoint. You may provide a list of pro
 
 **Note:** for any sort of update/delete operation, the `group_key` needs to be defined (available in your project settings). Similar to the /export_groups function, if instead of passing a list of group profiles, you pass query params, the `data_group_id` must also be defined (also in project settings). You can define either or both when initializing the `MixpanelUtils` instance as a parameter, or, you can define it before each execution via the `define_group_context` function. The latter can be helpful if you have multiple type of group profiles (say company_id vs team_id), you are sending multiple update operations and you need to switch the context between them.
 
-By default this will create a backup of these profiles with the name backup\_{timestamp}.json where timestamp is the current time in epoch time. The name of this backup profile by default will be name backup*{timestamp}.json where timestamp is the current time in epoch time. You may also provide a backup file name using the backup_file parameter.
+By default this will create a backup of these profiles with the name backup_{timestamp}.json where timestamp is the current time in epoch time. The name of this backup profile by default will be name backup*{timestamp}.json where timestamp is the current time in epoch time. You may also provide a backup file name using the backup_file parameter.
 
 ###### Query the JQL API
 

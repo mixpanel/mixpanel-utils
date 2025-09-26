@@ -565,7 +565,6 @@ class MixpanelUtils(object):
         :param query_params: Parameters to query /engage API. Alternative to profiles param. (Default value = None)
         :param timezone_offset: UTC offset in hours of project timezone setting, used to calculate as_of_timestamp
             parameter for queries that use behaviors. Required if query_params contains behaviors (Default value = None)
-        :param ignore_alias: True or False (Default value = True)
         :param backup: True to create backup file otherwise False (default)
         :param backup_file: Optional filename to use for the backup file (Default value = None)
         :type group_profiles: list | str
@@ -653,7 +652,6 @@ class MixpanelUtils(object):
         :type group_profiles: list | str
         :type query_params: dict
         :type timezone_offset: int | float
-        :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
         :return: Number of group_profiles operated on
@@ -2163,7 +2161,6 @@ class MixpanelUtils(object):
         :type token: str
         :type value: dict | list | str | (profile) -> dict | (profile) -> list
         :type operation: str
-        :type ignore_alias: bool
         :type dynamic: bool
         :return: Parameters for a Mixpanel /engage API update
         :rtype: dict
