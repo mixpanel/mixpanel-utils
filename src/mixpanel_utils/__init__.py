@@ -457,7 +457,7 @@ class MixpanelUtils(object):
             profile as its only parameter and returns the value to use for the operation on the given profile
         :param group_profiles: Can be a list of group profiles or the name of a file containing a JSON array or CSV of profiles.
             Alternative to query_params. (Default value = None)
-        :param query_params: Parameters to query /engage API. Alternative to profiles param. (Default value = None) bug a data_group_id is required
+        :param query_params: Parameters to query /engage API. Alternative to profiles param. (Default value = None) but a data_group_id is required
         :param timezone_offset: UTC offset in hours of project timezone setting, used to calculate as_of_timestamp
             parameter for queries that use behaviors. Required if query_params contains behaviors (Default value = None)
         :param backup: True to create backup file otherwise False (default)
@@ -568,9 +568,8 @@ class MixpanelUtils(object):
         :param ignore_alias: True or False (Default value = True)
         :param backup: True to create backup file otherwise False (default)
         :param backup_file: Optional filename to use for the backup file (Default value = None)
-        :type profiles: list | str
+        :type group_profiles: list | str
         :type query_params: dict
-        :type ignore_alias: bool
         :type timezone_offset: int | float
         :type backup: bool
         :type backup_file: str
@@ -644,21 +643,20 @@ class MixpanelUtils(object):
 
         :param value: Can be a static value applied to all profiles or a user-defined function (or lambda) that takes a
             profile as its only parameter and returns the value to use for the operation on the given profile
-        :param group_profiles: Can be a list of profiles or the name of a file containing a JSON array or CSV of profiles.
+        :param group_profiles: Can be a list of group profiles or the name of a file containing a JSON array or CSV of group profiles.
             Alternative to query_params. (Default value = None)
-        :param query_params: Parameters to query /engage API. Alternative to profiles param. (Default value = None)
+        :param query_params: Parameters to query /engage API. Alternative to group_profiles param. (Default value = None)
         :param timezone_offset: UTC offset in hours of project timezone setting, used to calculate as_of_timestamp
             parameter for queries that use behaviors. Required if query_params contains behaviors (Default value = None)
-        :param ignore_alias: True or False (Default value = False)
         :param backup: True to create backup file otherwise False (default)
         :param backup_file: Optional filename to use for the backup file (Default value = None)
-        :type profiles: list | str
+        :type group_profiles: list | str
         :type query_params: dict
         :type timezone_offset: int | float
         :type ignore_alias: bool
         :type backup: bool
         :type backup_file: str
-        :return: Number of profiles operated on
+        :return: Number of group_profiles operated on
         :rtype: int
 
         """
@@ -1622,7 +1620,7 @@ class MixpanelUtils(object):
         :param format:  (Default value = 'json')
         :param compress:  (Default value = False)
         :type output_file: str
-        :type params: dictcd
+        :type params: dict
         :type timezone_offset: int | float
         :type format: str
         :type compress: bool
@@ -2293,7 +2291,7 @@ class MixpanelUtils(object):
             prep_function = MixpanelUtils._prep_event_for_import
         elif endpoint == "engage" or endpoint == "import-people":
             prep_function = MixpanelUtils._prep_params_for_profile
-        elif endpoint == "groups" or endpoint == "import-people":
+        elif endpoint == "groups":
             prep_function = MixpanelUtils._prep_params_for_group_profile
         else:
             MixpanelUtils.LOGGER.error(

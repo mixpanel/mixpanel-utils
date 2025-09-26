@@ -390,7 +390,7 @@ The name of this backup profile by default will be name backup*{timestamp}.json 
 ###### Group delete
 
 ```python
-group_set(group_profiles=None, query_params=None, timezone_offset=None, backup=True, backup_file=None)
+group_delete(group_profiles=None, query_params=None, timezone_offset=None, backup=True, backup_file=None)
 ```
 
 Example:
@@ -398,7 +398,7 @@ Example:
 ```python
 # delete group profiles that have not been updated since Jan 1, 2025
 mputils.define_group_context(data_group_id='123456789',group_key="company_id")
-mputils.group_set(query_params={ 'selector' : 'properties["$last_seen"] < datetime("2025-01-01")'})
+mputils.group_delete(query_params={ 'selector' : 'properties["$last_seen"] < datetime("2025-01-01")'})
 ```
 
 Deletes group profiles using the /groups endpoint. You may provide a list of profiles to be deleted or a query parameter. 
