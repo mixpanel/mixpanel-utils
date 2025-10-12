@@ -22,6 +22,10 @@
   - [Remove a people property](#remove-a-people-property)
   - [Change a people property name](#change-a-people-property-name)
   - [Deduplicate people profiles](#deduplicate-people-profiles)
+  - [Export Group profiles](#export-group-profiles)
+  - [Import Group profiles](#import-group-profiles)
+  - [Group Set](#group-set)
+  - [Group Delete](#group-delete)
   - [Query JQL API](#query-the-jql-api)
   - [Import from Amplitude](#import-from-amplitude)
 - [Advanced scripting techniques](#advanced-scripting-techniques)
@@ -85,6 +89,8 @@ __init__(
 	max_retries=10,
 	debug=False,
 	residency='us',
+  data_group_id=None,
+  group_key=None
 )
 ```
 
@@ -103,6 +109,9 @@ When initializing the Mixpanel class you must specify an API secret as the first
 
 If your project participates in EU residency, you should specify `residency='eu'` when initializing. If your project participates in India residency, you should specify `residency='in'` when initializing.
 
+When exporting group data, `data_group_id` should be defined (can be found within project settings, in the group analytics section); this applies to directly calling `export_groups` or if you are making an update/deletion and passing a query parameter instead of a list of group profiles. For updates/deletes, a `group_key` must also be provided (like company_id or team_id). 
+
+You have the option to provide these 2 keys (data_group_id and group_key) when initializing the instance, or before running the import/export operations via the `define_group_context` function.
 
 ###### Export events
 
@@ -304,6 +313,99 @@ mputils.deduplicate_people(prop_to_match='$name',merge_props=True)
 ```
 
 Deduplicates a set of people profiles, by default all of them, by a property specified by prop_to_match. By default this property is '$email'. This will automatically create a backup of the profiles. You may also have it merge properties together by setting merge_props=True. You may also specify whether the property to match on is case sensitive or not using the case_sensitive parameter. If you are using behaviors in your query_params you must specify a timezone_offset.
+
+###### Define group context
+
+```python
+define_group_context(data_group_id=None,group_key=None)
+```
+
+Example:
+
+```python
+mputils.define_group_context(group_key="company_id")
+```
+Defines the context to be used when doing import/set operations, in which case a group_key must be defined, or the context for export operations, for which a data_group_id is required. Both of these can be found within Mixpanel.com 's UI, within project settings, in the group analytics section.
+
+
+###### Export Group profiles
+
+```python
+export_groups(self, output_file, params=None, timezone_offset=None, format='json', compress=False)
+```
+
+Example:
+
+```python
+selector = 'properties["plan_name"] == "Enterprise"'
+parameters = {'selector' : selector}
+mputils.export_groups('group_export.json',parameters)
+```
+
+Exports group profiles and writes them to a file using the engage endpoint. You must specify the file, the export params (see [here](https://mixpanel.com/help/reference/data-export-api#people-analytics) for full list of parameters) and the export format (default is JSON). Current supported formats are JSON or CSV. 
+
+**Note:** any group export operation requires defining the data_group_id associated to the group. You can find this in project settings [reference these docs](https://docs.mixpanel.com/docs/data-structure/group-analytics#setup-b2b-company-key). This can be defined either when you initialize the module, when you create the instance of `MixpanelUtils` as a parameter, or, at any point before exporting the data via the `define_group_context` function, like:
+
+```python
+mputils.define_group_context(data_group_id='123456789')
+```
+
+###### Import Group Profiles
+
+```python
+import_groups(data)
+```
+
+Example:
+
+```python
+mputils.define_group_context(group_key="company_id")
+mputils.import_groups('group_profiles.json')
+```
+
+imports group profiles using the [/groups endpoint](https://developer.mixpanel.com/reference/group-set-property). The data parameter is expected to be a filename or a list of objects. The file should be either in CSV or JSON format. The list should be a list of JSON objects (as in a /group export). This method ignores time and IP (so the group profile’s last seen and location will not be updated).
+
+`data_group_id` must be defined (can be located in project settings). You can define it when initializing the `MixpanelUtils` instance as a parameter, or, you can define it before each execution via the `define_group_context` function.
+
+###### Group set
+
+```python
+group_set(value, group_profiles=None, query_params=None, backup=True, backup_file=None, timezone_offset=None)
+```
+
+Example:
+
+```python
+# download group profiles where the current plan is set to "Ent" and convert to "Enterprise"
+mputils.define_group_context(data_group_id='123456789',group_key="company_id")
+mputils.group_set({'plan':'Enterprise'},query_params={ 'selector' : 'properties["plan"] = "Ent"'})
+```
+
+Sets group properties to a specific value using the /group endpoint. This should be a dictionary where the keys are the properties you wish to set and the values are the values of those properties. For example, if value was equal to `{'active' : True }` it would add the property `active` with a value of `True` to all the profiles. You can provide a list of group profiles to be updated or a query parameter (see here for full list of parameters).
+
+**Note:** for any sort of update/delete operation, the `group_key` needs to be defined (available in your project settings). Similar to the /export_groups function, if instead of passing a list of group profiles, you pass query params, the `data_group_id` must also be defined (also in project settings). You can define either or both when initializing the `MixpanelUtils` instance as a parameter, or, you can define it before each execution via the `define_group_context` function. The latter can be helpful if you have multiple type of group profiles (say company_id vs team_id), you are sending multiple update operations and you need to switch the context between them.
+
+The name of this backup profile by default will be name backup_{timestamp}.json where timestamp is the current time in epoch time. You may also provide a backup file name using the backup_file parameter.
+
+###### Group delete
+
+```python
+group_delete(group_profiles=None, query_params=None, timezone_offset=None, backup=True, backup_file=None)
+```
+
+Example:
+
+```python
+# delete group profiles that have not been updated since Jan 1, 2025
+mputils.define_group_context(data_group_id='123456789',group_key="company_id")
+mputils.group_delete(query_params={ 'selector' : 'properties["$last_seen"] < datetime("2025-01-01")'})
+```
+
+Deletes group profiles using the /groups endpoint. You may provide a list of profiles to be deleted or a query parameter. 
+
+**Note:** for any sort of update/delete operation, the `group_key` needs to be defined (available in your project settings). Similar to the /export_groups function, if instead of passing a list of group profiles, you pass query params, the `data_group_id` must also be defined (also in project settings). You can define either or both when initializing the `MixpanelUtils` instance as a parameter, or, you can define it before each execution via the `define_group_context` function. The latter can be helpful if you have multiple type of group profiles (say company_id vs team_id), you are sending multiple update operations and you need to switch the context between them.
+
+By default this will create a backup of these profiles with the name backup_{timestamp}.json where timestamp is the current time in epoch time. The name of this backup profile by default will be name backup*{timestamp}.json where timestamp is the current time in epoch time. You may also provide a backup file name using the backup_file parameter.
 
 ###### Query the JQL API
 
