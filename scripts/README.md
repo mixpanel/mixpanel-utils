@@ -57,11 +57,21 @@ In the source project, open each dashboard -> **...** menu -> **Move to project*
 
 **Step 3: Remap cohort IDs on moved dashboards**
 
+To remap all dashboards listed in `data/from_ui_dashboard_mapping.json`:
+
+```bash
+python scripts/remap_all_moved_dashboards.py
+```
+
+Or to remap individual dashboards by ID:
+
 ```bash
 python scripts/remap_moved_dashboard.py <dashboard_id> [<dashboard_id> ...]
 ```
 
-Updates dashboard filters and all report params to use the new cohort IDs. Accepts one or more dashboard IDs.
+Updates dashboard filters and all report params to use the new cohort IDs.
+
+The `from_ui_dashboard_mapping.json` file maps source dashboard IDs to target dashboard IDs (fill this in after moving dashboards via the UI).
 
 ---
 
@@ -187,6 +197,7 @@ python scripts/import_people_to_project.py people_export_from_123.json  # import
 | `reports.json` | Exported report definitions from source project |
 | `reports_remapped.json` | Reports with cohort IDs remapped |
 | `reports_ready.json` | Reports with both cohort and dashboard IDs remapped |
+| `from_ui_dashboard_mapping.json` | Source dashboard ID -> target dashboard ID (after UI move) |
 | `bookmark_mapping.json` | Old bookmark/report ID -> new bookmark/report ID |
 
 ## API Notes
