@@ -1,6 +1,6 @@
 # Mixpanel Project Migration Scripts
 
-Scripts for migrating dashboards, reports, and cohorts between Mixpanel projects.
+Scripts for migrating dashboards, reports, cohorts, annotations, events, and people between Mixpanel projects.
 
 ## Prerequisites
 
@@ -185,6 +185,20 @@ python scripts/import_people_to_project.py people_export_from_123.json  # import
 
 > Uses `TO_PROJECT_API_SECRET` and `TO_PROJECT_TOKEN`.
 
+## Annotations Migration
+
+Annotations are project-level (not tied to specific dashboards or reports) and appear on any time-series chart covering their date.
+
+```bash
+python scripts/migrate_annotations.py
+```
+
+Exports all annotations and tags from the source project, creates tags in the target (skipping duplicates), then imports all annotations with remapped tag IDs. Saves `data/annotations.json`.
+
+> Uses both `FROM_*` and `TO_*` service account credentials. Safe to re-run — tags are matched by name to avoid duplicates.
+
+---
+
 ## Data Files (`data/`)
 
 | File | Description |
@@ -198,6 +212,7 @@ python scripts/import_people_to_project.py people_export_from_123.json  # import
 | `reports_remapped.json` | Reports with cohort IDs remapped |
 | `reports_ready.json` | Reports with both cohort and dashboard IDs remapped |
 | `from_ui_dashboard_mapping.json` | Source dashboard ID -> target dashboard ID (after UI move) |
+| `annotations.json` | Exported annotations from source project |
 | `bookmark_mapping.json` | Old bookmark/report ID -> new bookmark/report ID |
 
 ## API Notes
@@ -206,6 +221,8 @@ python scripts/import_people_to_project.py people_export_from_123.json  # import
 - **Dashboards**: `POST /api/app/projects/{id}/dashboards` — `description` must be `null` (not empty string)
 - **Reports**: `POST /api/app/projects/{id}/bookmarks` — `params` must be a JSON string, `description` must be a string (not `null`)
 - **Linking reports**: `PATCH /api/app/projects/{id}/bookmarks/{bid}` with `{"dashboard_id": ...}`
+- **Annotations**: `GET/POST /api/app/projects/{id}/annotations` — date format must be `YYYY-MM-DD HH:mm:ss` (not ISO 8601)
+- **Annotation tags**: `GET/POST /api/app/projects/{id}/annotations/tags` — no delete endpoint available
 - **Dashboard layouts**: Read-only via API. Use Mixpanel's "Move to project" UI feature to preserve layouts.
 - **Auth**: All App API endpoints use HTTP Basic Auth with service account credentials.
 - **Rate limits**: All scripts retry on 429 responses, respecting the `Retry-After` header.
