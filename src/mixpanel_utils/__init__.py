@@ -51,10 +51,10 @@ class MixpanelUtils(object):
 
     def __init__(
             self,
-            api_secret,
-            token=None,
             service_account_username=None,
+            service_account_password=None,
             project_id=None,
+            token=None,
             strict_import=True,
             timeout=120,
             pool_size=None,
@@ -67,10 +67,10 @@ class MixpanelUtils(object):
     ):
         """Initializes the MixpanelUtils object
 
-        :param api_secret: API Secret for your project OR your Service Account
+        :param service_account_username: Username for your Service Account (REQUIRED)
+        :param service_account_password: Password/Secret for your Service Account (REQUIRED)
+        :param project_id: Project ID, required for Service Account authentication (REQUIRED)
         :param token: Project Token for your project, required for imports
-        :param service_account_username: Username for your Service Account
-        :param project_id: project id, required for Service Account authentication
         :param strict_import: When set to True (recommended), Mixpanel will validate imported events and return errors
             per event that failed. (Default value = True)
         :param timeout: Time in seconds to wait for HTTP responses
@@ -80,10 +80,10 @@ class MixpanelUtils(object):
         :param max_retries: Maximum number of times to retry when a 5xx HTTP response is received (Default value = 4)
         :param debug: Enable debug logging
         :param residency: residency for your project. Accepts "us", "eu", or "in". (Default value = "us")
-        :type api_secret: str
-        :type token: str
         :type service_account_username: str
+        :type service_account_password: str
         :type project_id: int
+        :type token: str
         :type strict_import: bool
         :type timeout: int
         :type pool_size: int
@@ -94,13 +94,20 @@ class MixpanelUtils(object):
 
         """
 
-        self.api_secret = api_secret
+        # Enforce Service Account authentication only - API Secret is deprecated
+        if service_account_username is None or service_account_password is None or project_id is None:
+            raise ValueError(
+                "API Secret authentication is deprecated and no longer supported. "
+                "You must use Service Account authentication with 'service_account_username', 'service_account_password', and 'project_id' parameters. "
+                "Please create a Service Account in your Mixpanel project settings and use those credentials instead."
+            )
+
+        self.service_account_password = service_account_password
         self.token = token
         self.service_account_username = service_account_username
         self.project_id = project_id
         self.strict_import = strict_import
-        if self.service_account_username is not None:
-            assert self.project_id, "project_id required for Service Account authentication!"
+        assert self.project_id, "project_id required for Service Account authentication!"
         self.timeout = timeout
         if pool_size is None:
             # Default number of threads is system dependent
@@ -229,10 +236,8 @@ class MixpanelUtils(object):
                 base = [base_url, str(MixpanelUtils.VERSION)]
             request_url = "/".join(base + path_components)
 
-            if self.service_account_username:
-                basic_credentials = f"{self.service_account_username}:{self.api_secret}"
-            else:
-                basic_credentials = f"{self.api_secret}:"
+            # Service Account authentication (always required now)
+            basic_credentials = f"{self.service_account_username}:{self.service_account_password}"
             encoded_credentials = base64.b64encode(basic_credentials.encode("utf-8")).decode("utf-8")
 
             if headers is None:
@@ -240,8 +245,8 @@ class MixpanelUtils(object):
             headers["Authorization"] = f"Basic {encoded_credentials}"
 
             # Set up request url and body based on HTTP method and endpoint
-            if self.service_account_username:
-                params['project_id'] = self.project_id
+            # Always add project_id for Service Account authentication
+            params['project_id'] = self.project_id
             if method == "GET" or method == "DELETE":
                 data = None
                 request_url += "?" + MixpanelUtils._unicode_urlencode(params)
@@ -252,8 +257,8 @@ class MixpanelUtils(object):
                     query_params = {}
                     if self.strict_import:
                         query_params["strict"] = 1
-                    if self.service_account_username:
-                        query_params["project_id"] = self.project_id
+                    # Always add project_id for Service Account authentication
+                    query_params["project_id"] = self.project_id
                     if query_params:
                         request_url += "?" + MixpanelUtils._unicode_urlencode(query_params)
                 else:
