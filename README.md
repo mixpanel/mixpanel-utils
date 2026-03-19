@@ -70,7 +70,7 @@ And use the functions below.
 
 Some example scripts are:
 
-\*[mixpanel_utils_example.py](mixpanel_utils_example.py)
+\*[mixpanel_utils_example.py](tools/mixpanel_utils_example.py)
 
 #### Top-level functions
 
