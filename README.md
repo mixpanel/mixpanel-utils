@@ -107,7 +107,7 @@ mputils = MixpanelUtils(
 )
 ```
 
-When initializing the Mixpanel class you must provide Service Account credentials: `service_account_username`, `service_account_password`, and `project_id`. All three parameters are required. You may specify a project `token` (this is required if you are importing). You may also specify a `timeout` for request queries (in seconds), the number of CPU cores to use with `pool_size` (defaults to all), the maximum number of simultaneous read connections to make with `read_pool_size`, and the maximum number of retries an import will attempt at a time before giving up.
+When initializing the MixpanelUtils class you must provide Service Account credentials: `service_account_username`, `service_account_password`, and `project_id`. All three parameters are required. You may specify a project `token` (this is required if you are importing). You may also specify a `timeout` for request queries (in seconds), the number of CPU cores to use with `pool_size` (defaults to all), the maximum number of simultaneous read connections to make with `read_pool_size`, and the maximum number of retries an import will attempt at a time before giving up.
 
 If your project participates in EU residency, you should specify `residency='eu'` when initializing. If your project participates in India residency, you should specify `residency='in'` when initializing.
 

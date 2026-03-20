@@ -46,7 +46,9 @@ To create a Service Account, visit your Mixpanel project settings or refer to th
   3. `project_id` (required)
   4. `token` (optional, required for imports)
   5. Other optional parameters...
-- Added a focused pytest regression suite for `MixpanelUtils.__init__` Service Account authentication requirements, including rejection of legacy API Secret-only usage.
+- Invalid or missing required parameters now raise `ValueError` instead of triggering assertions.
+- Added pytest test suite for `MixpanelUtils.__init__` Service Account authentication requirements, including rejection of legacy API Secret-only usage.
+- Added pytest test suite for URL construction across all supported API endpoints and regions.
 - Corrected the README example script link to point to `tools/mixpanel_utils_example.py`.
 
 ### Removed

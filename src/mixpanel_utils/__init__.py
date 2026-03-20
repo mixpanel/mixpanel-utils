@@ -95,19 +95,26 @@ class MixpanelUtils(object):
         """
 
         # Enforce Service Account authentication only - API Secret is deprecated
-        if service_account_username is None or service_account_password is None or project_id is None:
-            raise ValueError(
-                "API Secret authentication is deprecated and no longer supported. "
-                "You must use Service Account authentication with 'service_account_username', 'service_account_password', and 'project_id' parameters. "
-                "Please create a Service Account in your Mixpanel project settings and use those credentials instead."
-            )
+        _migration_help = (
+            "API Secret authentication is deprecated and no longer supported. "
+            "You must use Service Account authentication with 'service_account_username', 'service_account_password', and 'project_id' parameters. "
+            "Please create a Service Account in your Mixpanel project settings and use those credentials instead."
+        )
+        if not isinstance(service_account_username, str) or not service_account_username:
+            raise ValueError(_migration_help)
+        if not isinstance(service_account_password, str) or not service_account_password:
+            raise ValueError(_migration_help)
+        if not isinstance(project_id, int) or project_id <= 0:
+            raise ValueError(_migration_help)
+        _valid_residencies = ("us", "eu", "in")
+        if residency not in _valid_residencies:
+            raise ValueError(f"residency must be one of {_valid_residencies!r}, got {residency!r}.")
 
         self.service_account_password = service_account_password
         self.token = token
         self.service_account_username = service_account_username
         self.project_id = project_id
         self.strict_import = strict_import
-        assert self.project_id, "project_id required for Service Account authentication!"
         self.timeout = timeout
         if pool_size is None:
             # Default number of threads is system dependent
@@ -118,8 +125,6 @@ class MixpanelUtils(object):
         self.data_group_id = data_group_id
         self.group_key = group_key
         self.residency = residency
-        residency_values = ["us","eu","in"]
-        assert self.residency in residency_values, "residency value must be 'us', 'eu, or 'in'!"
         self.raw_api = (
             "https://data.mixpanel.com/api" if residency == "us"
             else f"https://data-{residency}.mixpanel.com/api"
@@ -390,7 +395,8 @@ class MixpanelUtils(object):
         :rtype: int
 
         """
-        assert self.token, "Project token required for People operation!"
+        if not self.token:
+            raise ValueError("Project token required for People operation!")
         if profiles is not None and query_params is not None:
             MixpanelUtils.LOGGER.error(
                 "profiles and query_params both provided, please use one or the other"
@@ -477,8 +483,10 @@ class MixpanelUtils(object):
         :rtype: int
 
         """
-        assert self.token, "Project token required for group operation!"
-        assert self.group_key, "a group_key is required for group operation!"
+        if not self.token:
+            raise ValueError("Project token required for group operation!")
+        if not self.group_key:
+            raise ValueError("a group_key is required for group operation!")
 
         if group_profiles is None and self.data_group_id is None:
             raise RuntimeError("group operations require for groups to be provided OR a data_group_id to be defined for querying group profiles")
@@ -1683,8 +1691,10 @@ class MixpanelUtils(object):
         :param data: A list group profile dicts
         :type data: list | str
         """
-        assert self.token, "Project token required for import!"
-        assert self.group_key, "group_key required for import!"
+        if not self.token:
+            raise ValueError("Project token required for import!")
+        if not self.group_key:
+            raise ValueError("group_key required for import!")
 
         # Create a list of arguments to be used in one of the _prep functions later
         args = [{}, self.token, self.group_key]
@@ -2396,7 +2406,8 @@ class MixpanelUtils(object):
         :type raw_record_import: bool
 
         """
-        assert self.token, "Project token required for import!"
+        if not self.token:
+            raise ValueError("Project token required for import!")
 
         # Create a list of arguments to be used in one of the _prep functions later
         args = [{}, self.token]
