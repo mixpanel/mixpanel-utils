@@ -59,7 +59,7 @@ Then create a new Mixpanel object like:
 mputils = MixpanelUtils(
 	service_account_username='Service Account Username',
 	service_account_password='Service Account Password',
-	project_id=ProjectID,
+	project_id=1234567,
 	token='Project Token',
 )
 ```
