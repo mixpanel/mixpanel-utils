@@ -10,14 +10,19 @@ CONFIGURATION = {
 	"batch_at": 30_000 # number of events to queue in memory before flushing in parallel threads
 }
 CREDENTIALS = {
-    "project_id": "", # can be left blank when using the API secret instead of service account
-	"is_EU_project": False, # set to True if the destination project is in the EU
-    "username": "", # service account username; can be left blank when using the API secret
-    "password": "" # service account password or API scret
+    "project_id": None, # REQUIRED - your Mixpanel project ID
+    "residency": "us", # REQUIRED - project residency: "us", "eu", or "in"
+    "service_account_username": "", # REQUIRED - service account username
+    "service_account_password": "" # REQUIRED - service account password
 }
 # ----- Configuration
 
-mputils = MixpanelUtils(CREDENTIALS["username"], eu=CREDENTIALS['is_EU_project']) if CREDENTIALS['project_id'] == "" else MixpanelUtils(CREDENTIALS["password"], service_account_username=CREDENTIALS['username'],project_id=CREDENTIALS['project_id'],eu=CREDENTIALS['is_EU_project'])
+mputils = MixpanelUtils(
+    service_account_username=CREDENTIALS['service_account_username'],
+    service_account_password=CREDENTIALS['service_account_password'],
+    project_id=CREDENTIALS['project_id'],
+    residency=CREDENTIALS['residency']
+)
 
 def get_time():
 	return int(time.time())

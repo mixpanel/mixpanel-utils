@@ -2,7 +2,9 @@ from mixpanel_utils import MixpanelUtils
 
 if __name__ == '__main__':
 	credentials = {
-		'API_secret': '',
+		'service_account_username': '',
+		'service_account_password': '',
+		'project_id': 1234567,  # must be a positive int Mixpanel project ID
 		'token': '',
 	}
 	# Optional group context
@@ -13,7 +15,11 @@ if __name__ == '__main__':
 
 	# first we are going to make a Mixpanel object instance
 	# if you want more information output when running commands set debug=True here
-	m = MixpanelUtils(credentials['API_secret'])
+	m = MixpanelUtils(
+		service_account_username=credentials['service_account_username'],
+		service_account_password=credentials['service_account_password'],
+		project_id=credentials['project_id']
+	)
 
 	# we'll export as JSON first
 	m.export_events('test_event_export.txt',{'from_date':'2017-01-01','to_date':'2017-01-01','event':'["App Store Rating"]'})
@@ -54,7 +60,12 @@ if __name__ == '__main__':
 
 
 	# now let's import these events and people into a test project
-	i = MixpanelUtils(credentials['API_secret'],credentials['token'])
+	i = MixpanelUtils(
+		service_account_username=credentials['service_account_username'],
+		service_account_password=credentials['service_account_password'],
+		project_id=credentials['project_id'],
+		token=credentials['token']
+	)
 
 	# let's import the JSON events first
 	# you need to supply a timezone_offset here as well if you did not supply a timezone_offset in the event export

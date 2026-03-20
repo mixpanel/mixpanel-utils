@@ -57,18 +57,20 @@ Then create a new Mixpanel object like:
 
 ```python
 mputils = MixpanelUtils(
-	'Service Account Secret',
 	service_account_username='Service Account Username',
-	project_id='Project ID',
+	service_account_password='Service Account Password',
+	project_id=1234567,
 	token='Project Token',
 )
 ```
+
+**IMPORTANT:** [Project Secret (API Secret)](https://developer.mixpanel.com/reference/project-secret) authentication has been deprecated and will be fully retired on March 3, 2027. Please migrate to [Service Accounts](https://developer.mixpanel.com/reference/service-accounts) instead, as they are the recommended authentication mechanism going forward.
 
 And use the functions below.
 
 Some example scripts are:
 
-\*[mixpanel_utils_example.py](mixpanel_utils_example.py)
+\*[mixpanel_utils_example.py](tools/mixpanel_utils_example.py)
 
 #### Top-level functions
 
@@ -78,10 +80,10 @@ These are functions that should allow you to complete a number of tasks with min
 
 ```python
 __init__(
-	api_secret,
-	token=None,
 	service_account_username=None,
+	service_account_password=None,
 	project_id=None,
+	token=None,
 	strict_import=True,
 	timeout=120,
 	pool_size=None,
@@ -98,14 +100,14 @@ Example:
 
 ```python
 mputils = MixpanelUtils(
-	'ServiceAccountSecretHere',
-	token='ProjectTokenHere',
 	service_account_username='my-user.12345.mp-service-account',
-	project_id=1695321,
+	service_account_password='ServiceAccountPasswordHere',
+	project_id=project_id_here,
+	token='ProjectTokenHere',
 )
 ```
 
-When initializing the Mixpanel class you must specify an API secret as the first parameter, either a Service Account Secret or Project API Secret. If you provide a Service Account secret, you must also provide a `service_account_username` and `project_id`. You may specify a project `token` (this is required if you are importing). You may also specify a `timeout` for request queries (in seconds), the number of CPU cores to use with `pool_size` (defaults to all), the maximum number of simultaneous read connections to make with `read_pool_size`, and the maximum number of retries an import will attempt at a time before giving up.
+When initializing the MixpanelUtils class you must provide Service Account credentials: `service_account_username`, `service_account_password`, and `project_id`. All three parameters are required. You may specify a project `token` (this is required if you are importing). You may also specify a `timeout` for request queries (in seconds), the number of CPU cores to use with `pool_size` (defaults to all), the maximum number of simultaneous read connections to make with `read_pool_size`, and the maximum number of retries an import will attempt at a time before giving up.
 
 If your project participates in EU residency, you should specify `residency='eu'` when initializing. If your project participates in India residency, you should specify `residency='in'` when initializing.
 
@@ -461,7 +463,12 @@ Say I have a list of distinct_ids and I'd like to add a property "favorite_color
 ```python
 # we'll provide the list here but this could just as easily be a list in a CSV
 profile_list = [{'$distinct_id':'joe@mail.com','favorite_color':'blue'},{'$distinct_id':'george@mail.com','favorite_color':'red'}]
-mputils = Mixpanel('secret',token='token')
+mputils = MixpanelUtils(
+	service_account_username='my-user.12345.mp-service-account',
+	service_account_password='ServiceAccountPasswordHere',
+	project_id=project_id_here,
+	token='ProjectTokenHere'
+)
 
 mputils.people_set(lambda x: {'favorite_color' : x['favorite_color']}, profiles=profile_list)
 ```

@@ -51,10 +51,10 @@ class MixpanelUtils(object):
 
     def __init__(
             self,
-            api_secret,
-            token=None,
             service_account_username=None,
+            service_account_password=None,
             project_id=None,
+            token=None,
             strict_import=True,
             timeout=120,
             pool_size=None,
@@ -67,10 +67,10 @@ class MixpanelUtils(object):
     ):
         """Initializes the MixpanelUtils object
 
-        :param api_secret: API Secret for your project OR your Service Account
+        :param service_account_username: Username for your Service Account (REQUIRED)
+        :param service_account_password: Password/Secret for your Service Account (REQUIRED)
+        :param project_id: Project ID, required for Service Account authentication (REQUIRED)
         :param token: Project Token for your project, required for imports
-        :param service_account_username: Username for your Service Account
-        :param project_id: project id, required for Service Account authentication
         :param strict_import: When set to True (recommended), Mixpanel will validate imported events and return errors
             per event that failed. (Default value = True)
         :param timeout: Time in seconds to wait for HTTP responses
@@ -80,10 +80,10 @@ class MixpanelUtils(object):
         :param max_retries: Maximum number of times to retry when a 5xx HTTP response is received (Default value = 4)
         :param debug: Enable debug logging
         :param residency: residency for your project. Accepts "us", "eu", or "in". (Default value = "us")
-        :type api_secret: str
-        :type token: str
         :type service_account_username: str
+        :type service_account_password: str
         :type project_id: int
+        :type token: str
         :type strict_import: bool
         :type timeout: int
         :type pool_size: int
@@ -94,13 +94,27 @@ class MixpanelUtils(object):
 
         """
 
-        self.api_secret = api_secret
+        # Enforce Service Account authentication only - API Secret is deprecated
+        _migration_help = (
+            "API Secret authentication is deprecated and no longer supported. "
+            "You must use Service Account authentication with 'service_account_username', 'service_account_password', and 'project_id' parameters. "
+            "Please create a Service Account in your Mixpanel project settings and use those credentials instead."
+        )
+        if not isinstance(service_account_username, str) or not service_account_username:
+            raise ValueError(_migration_help)
+        if not isinstance(service_account_password, str) or not service_account_password:
+            raise ValueError(_migration_help)
+        if not isinstance(project_id, int) or project_id <= 0:
+            raise ValueError(_migration_help)
+        _valid_residencies = ("us", "eu", "in")
+        if residency not in _valid_residencies:
+            raise ValueError(f"residency must be one of {_valid_residencies!r}, got {residency!r}.")
+
+        self.service_account_password = service_account_password
         self.token = token
         self.service_account_username = service_account_username
         self.project_id = project_id
         self.strict_import = strict_import
-        if self.service_account_username is not None:
-            assert self.project_id, "project_id required for Service Account authentication!"
         self.timeout = timeout
         if pool_size is None:
             # Default number of threads is system dependent
@@ -111,8 +125,6 @@ class MixpanelUtils(object):
         self.data_group_id = data_group_id
         self.group_key = group_key
         self.residency = residency
-        residency_values = ["us","eu","in"]
-        assert self.residency in residency_values, "residency value must be 'us', 'eu, or 'in'!"
         self.raw_api = (
             "https://data.mixpanel.com/api" if residency == "us"
             else f"https://data-{residency}.mixpanel.com/api"
@@ -229,10 +241,8 @@ class MixpanelUtils(object):
                 base = [base_url, str(MixpanelUtils.VERSION)]
             request_url = "/".join(base + path_components)
 
-            if self.service_account_username:
-                basic_credentials = f"{self.service_account_username}:{self.api_secret}"
-            else:
-                basic_credentials = f"{self.api_secret}:"
+            # Service Account authentication (always required now)
+            basic_credentials = f"{self.service_account_username}:{self.service_account_password}"
             encoded_credentials = base64.b64encode(basic_credentials.encode("utf-8")).decode("utf-8")
 
             if headers is None:
@@ -240,8 +250,8 @@ class MixpanelUtils(object):
             headers["Authorization"] = f"Basic {encoded_credentials}"
 
             # Set up request url and body based on HTTP method and endpoint
-            if self.service_account_username:
-                params['project_id'] = self.project_id
+            # Always add project_id for Service Account authentication
+            params['project_id'] = self.project_id
             if method == "GET" or method == "DELETE":
                 data = None
                 request_url += "?" + MixpanelUtils._unicode_urlencode(params)
@@ -252,8 +262,8 @@ class MixpanelUtils(object):
                     query_params = {}
                     if self.strict_import:
                         query_params["strict"] = 1
-                    if self.service_account_username:
-                        query_params["project_id"] = self.project_id
+                    # Always add project_id for Service Account authentication
+                    query_params["project_id"] = self.project_id
                     if query_params:
                         request_url += "?" + MixpanelUtils._unicode_urlencode(query_params)
                 else:
@@ -385,7 +395,8 @@ class MixpanelUtils(object):
         :rtype: int
 
         """
-        assert self.token, "Project token required for People operation!"
+        if not self.token:
+            raise ValueError("Project token required for People operation!")
         if profiles is not None and query_params is not None:
             MixpanelUtils.LOGGER.error(
                 "profiles and query_params both provided, please use one or the other"
@@ -472,8 +483,10 @@ class MixpanelUtils(object):
         :rtype: int
 
         """
-        assert self.token, "Project token required for group operation!"
-        assert self.group_key, "a group_key is required for group operation!"
+        if not self.token:
+            raise ValueError("Project token required for group operation!")
+        if not self.group_key:
+            raise ValueError("a group_key is required for group operation!")
 
         if group_profiles is None and self.data_group_id is None:
             raise RuntimeError("group operations require for groups to be provided OR a data_group_id to be defined for querying group profiles")
@@ -1678,8 +1691,10 @@ class MixpanelUtils(object):
         :param data: A list group profile dicts
         :type data: list | str
         """
-        assert self.token, "Project token required for import!"
-        assert self.group_key, "group_key required for import!"
+        if not self.token:
+            raise ValueError("Project token required for import!")
+        if not self.group_key:
+            raise ValueError("group_key required for import!")
 
         # Create a list of arguments to be used in one of the _prep functions later
         args = [{}, self.token, self.group_key]
@@ -2391,7 +2406,8 @@ class MixpanelUtils(object):
         :type raw_record_import: bool
 
         """
-        assert self.token, "Project token required for import!"
+        if not self.token:
+            raise ValueError("Project token required for import!")
 
         # Create a list of arguments to be used in one of the _prep functions later
         args = [{}, self.token]
