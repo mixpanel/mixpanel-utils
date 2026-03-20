@@ -30,4 +30,4 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: mixpanel/mixpanel-python
+          slug: mixpanel/mixpanel-utils
