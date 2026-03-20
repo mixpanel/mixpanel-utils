@@ -4,7 +4,7 @@ if __name__ == '__main__':
 	credentials = {
 		'service_account_username': '',
 		'service_account_password': '',
-		'project_id': None,
+		'project_id': 1234567,  # must be a positive int Mixpanel project ID
 		'token': '',
 	}
 	# Optional group context
