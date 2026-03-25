@@ -55,7 +55,7 @@ from .utils import comma, bytes_human
 @click.option("--retries", "max_retries", default=10, type=int, help="Max retry attempts")
 @click.option("--compress/--no-compress", default=True, help="Gzip compress event requests")
 # ── Transforms ───────────────────────────────────────────────────────
-@click.option("--fix", "fix_data", is_flag=True, help="Apply automatic data fixes")
+@click.option("--fix/--no-fix", "fix_data", default=True, help="Apply automatic data fixes (default: on)")
 @click.option("--fix-time", is_flag=True, help="Normalize timestamps to UNIX epoch")
 @click.option("--dedupe", is_flag=True, help="Remove duplicate records")
 @click.option("--remove-nulls", is_flag=True, help="Remove null/empty values")
