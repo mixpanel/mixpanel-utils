@@ -12,7 +12,6 @@ from __future__ import annotations
 from .core.job import Job
 from .core.pipeline import core_pipeline
 from .io.parsers import resolve_input
-from .io.http_client import MixpanelHttpClient
 
 __version__ = "1.0.0"
 
@@ -79,6 +78,7 @@ async def mp_import(
             return await mp_import(import_creds, export_result, import_opts)
         return job.summary()
 
+    from .io.http_client import MixpanelHttpClient
     http_client = MixpanelHttpClient()
     try:
         source = await resolve_input(data, job)
@@ -119,13 +119,14 @@ class MpStream:
         result = await stream.flush()
     """
 
-    def __init__(self, job: Job, http_client: MixpanelHttpClient):
+    def __init__(self, job: Job, http_client):
         self._job = job
         self._http_client = http_client
         self._buffer: list[dict] = []
 
     @classmethod
     async def create(cls, creds: dict, options: dict | None = None) -> "MpStream":
+        from .io.http_client import MixpanelHttpClient
         options = options or {}
         job = Job(creds, options)
         await job.init()
