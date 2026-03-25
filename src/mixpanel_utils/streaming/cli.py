@@ -134,7 +134,12 @@ def main(data, **kwargs):
     no_data_types = ("export", "profile-export", "profile-delete", "group-export",
                      "group-delete", "export-import-event", "export-import-profile")
     if not data and rt not in no_data_types:
-        click.echo("Error: DATA argument is required (file path, directory, or cloud URL)", err=True)
+        click.echo("Usage: mixpanel-utils DATA --type TYPE --token TOKEN [options]", err=True)
+        click.echo("", err=True)
+        click.echo("  DATA is a file path, directory, glob, or cloud URL (gs://, s3://).", err=True)
+        click.echo("  For exports, DATA is optional.", err=True)
+        click.echo("", err=True)
+        click.echo("Run 'mixpanel-utils --help' for all options.", err=True)
         sys.exit(1)
 
     # Set up verbose progress display
