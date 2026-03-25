@@ -9,7 +9,7 @@ from pathlib import Path
 
 from mixpanel_utils.streaming import mp_import
 
-TEST_DATA = Path(__file__).parent.parent.parent / "SCRATCH_TEST_DATA"
+FIXTURES = Path(__file__).parent / "fixtures"
 
 
 @pytest.fixture
@@ -25,21 +25,17 @@ def run(coro):
 
 class TestDryRun:
     def test_jsonl_dry_run(self):
-        path = TEST_DATA / "events.ndjson"
-        if not path.exists():
-            pytest.skip("Test data not available")
+        path = FIXTURES / "events.ndjson"
         result = run(mp_import(None, str(path), {"dry_run": True}))
-        assert result["total"] > 0
-        assert result["success"] == result["total"]
-        assert len(result["dry_run"]) == result["total"]
+        assert result["total"] == 3
+        assert result["success"] == 3
+        assert len(result["dry_run"]) == 3
 
     def test_csv_dry_run(self):
-        path = TEST_DATA / "eventAsTable.csv"
-        if not path.exists():
-            pytest.skip("Test data not available")
+        path = FIXTURES / "events.csv"
         result = run(mp_import(None, str(path), {"dry_run": True, "stream_format": "csv"}))
-        assert result["total"] > 0
-        assert result["success"] > 0
+        assert result["total"] == 3
+        assert result["success"] == 3
 
     def test_list_input(self):
         events = [
@@ -107,52 +103,44 @@ class TestDryRun:
 
 class TestVendorDryRun:
     def test_amplitude_vendor(self):
-        path = TEST_DATA / "amplitude" / "2023-04-10_1#0.json"
-        if not path.exists():
-            pytest.skip("Test data not available")
+        path = FIXTURES / "amplitude.json"
         result = run(mp_import(None, str(path), {
             "vendor": "amplitude",
             "vendor_opts": {"user_id": "user_id", "v2_compat": True},
             "dry_run": True,
             "fix_data": True,
         }))
-        assert result["total"] > 0
-        assert result["success"] == result["total"]
+        assert result["total"] == 1
+        assert result["success"] == 1
         assert result["dry_run"][0]["properties"]["$source"] == "amplitude-to-mixpanel"
 
     def test_june_csv_vendor(self):
-        path = TEST_DATA / "june" / "events-small.csv"
-        if not path.exists():
-            pytest.skip("Test data not available")
+        path = FIXTURES / "june_events.csv"
         result = run(mp_import(None, str(path), {
             "vendor": "june",
             "vendor_opts": {"v2compat": True},
             "dry_run": True,
             "stream_format": "csv",
         }))
-        assert result["total"] > 0
-        assert result["success"] == result["total"]
+        assert result["total"] == 2
+        assert result["success"] == 2
 
     def test_mparticle_vendor(self):
-        path = TEST_DATA / "mparticle" / "sample_data.txt"
-        if not path.exists():
-            pytest.skip("Test data not available")
+        path = FIXTURES / "mparticle.jsonl"
         result = run(mp_import(None, str(path), {
             "vendor": "mparticle",
             "dry_run": True,
             "stream_format": "jsonl",
         }))
-        assert result["total"] > 0
-        assert result["success"] > 0
+        assert result["total"] == 1
+        assert result["success"] == 1
 
 
 class TestDirectoryImport:
     def test_directory_import(self):
-        path = TEST_DATA / "formats" / "json"
-        if not path.exists() or not path.is_dir():
-            pytest.skip("Test data not available")
+        path = FIXTURES / "json_dir"
         result = run(mp_import(None, str(path), {"dry_run": True}))
-        assert result["total"] > 0
+        assert result["total"] == 3
 
 
 class TestWriteToFile:

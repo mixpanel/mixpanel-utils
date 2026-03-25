@@ -2,7 +2,6 @@
 
 import json
 import pytest
-from pathlib import Path
 
 from mixpanel_utils.streaming.vendors.amplitude import amp_events_to_mp, amp_user_to_mp, amp_group_to_mp
 from mixpanel_utils.streaming.vendors.heap import heap_events_to_mp, heap_user_to_mp
@@ -11,8 +10,6 @@ from mixpanel_utils.streaming.vendors.posthog import posthog_events_to_mp, posth
 from mixpanel_utils.streaming.vendors.mparticle import mparticle_events_to_mixpanel, mparticle_user_to_mixpanel
 from mixpanel_utils.streaming.vendors.june import june_events_to_mp, june_user_to_mp, june_group_to_mp
 from mixpanel_utils.streaming.vendors.mixpanel import mixpanel_events_to_mixpanel
-
-TEST_DATA = Path(__file__).parent.parent.parent / "SCRATCH_TEST_DATA"
 
 
 class TestAmplitude:
@@ -59,18 +56,6 @@ class TestAmplitude:
         result = transform({"user_properties": {}})
         assert result == {}
 
-    def test_real_data(self):
-        path = TEST_DATA / "amplitude" / "2023-04-10_1#0.json"
-        if not path.exists():
-            pytest.skip("Test data not available")
-        transform = amp_events_to_mp({"user_id": "user_id", "v2_compat": True})
-        with open(path) as f:
-            record = json.loads(f.readline())
-        result = transform(record)
-        assert result is not None
-        assert result["event"]
-        assert "$insert_id" in result["properties"]
-
 
 class TestHeap:
     def test_event_transform(self):
@@ -95,16 +80,6 @@ class TestHeap:
         }
         result = transform(record)
         assert result["$distinct_id"] == "user@example.com"
-
-    def test_real_data(self):
-        path = TEST_DATA / "heap" / "heap-events-ex.json"
-        if not path.exists():
-            pytest.skip("Test data not available")
-        transform = heap_events_to_mp({})
-        data = _load_json_or_jsonl(path)
-        result = transform(data[0])
-        assert result is not None
-        assert result.get("event")
 
 
 class TestGA4:
@@ -136,16 +111,6 @@ class TestGA4:
         }
         result = transform(record)
         assert "$insert_id" in result["properties"]
-
-    def test_real_data(self):
-        path = TEST_DATA / "ga4" / "ga4_sample.json"
-        if not path.exists():
-            pytest.skip("Test data not available")
-        transform = ga_events_to_mp({"time_conversion": "seconds"})
-        data = _load_json_or_jsonl(path)
-        result = transform(data[0])
-        assert result is not None
-        assert result.get("event")
 
 
 class TestPostHog:
@@ -215,15 +180,6 @@ class TestMParticle:
         assert result[0]["event"] == "Purchase"
         assert result[0]["properties"]["$user_id"] == "cust123"
 
-    def test_real_data(self):
-        path = TEST_DATA / "mparticle" / "sample_data.txt"
-        if not path.exists():
-            pytest.skip("Test data not available")
-        transform = mparticle_events_to_mixpanel({})
-        data = _load_json_or_jsonl(path)
-        result = transform(data[0])
-        assert isinstance(result, list)
-
 
 class TestJune:
     def test_event_transform(self):
@@ -283,13 +239,3 @@ class TestMixpanelReimport:
         assert result["properties"]["$insert_id"] == "abc123"
         assert result["properties"]["time"] == 1700000000
         assert result["properties"]["page"] == "/home"
-
-
-def _load_json_or_jsonl(path):
-    with open(path) as f:
-        content = f.read().strip()
-    try:
-        data = json.loads(content)
-        return data if isinstance(data, list) else [data]
-    except json.JSONDecodeError:
-        return [json.loads(line) for line in content.split("\n") if line.strip()]
