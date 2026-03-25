@@ -3,6 +3,8 @@
 These functions call Mixpanel's export APIs and write results to local files or return them.
 """
 
+from __future__ import annotations
+
 import asyncio
 import json
 import logging

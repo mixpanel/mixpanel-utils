@@ -7,6 +7,8 @@ Public API:
     StreamInterface — async interface attached to MixpanelUtils instances
 """
 
+from __future__ import annotations
+
 from .core.job import Job
 from .core.pipeline import core_pipeline
 from .io.parsers import resolve_input

@@ -1,5 +1,7 @@
 """mParticle to Mixpanel vendor transforms."""
 
+from __future__ import annotations
+
 import mmh3
 
 BAD_USER_IDS = {

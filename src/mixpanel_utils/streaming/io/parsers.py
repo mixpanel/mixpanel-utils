@@ -3,6 +3,8 @@
 All readers return AsyncIterator[dict] for consistent pipeline consumption.
 """
 
+from __future__ import annotations
+
 import asyncio
 import csv
 import gzip

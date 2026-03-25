@@ -10,7 +10,7 @@ setup(
     author='Jared McFarland',
     author_email='jared@mixpanel.com',
     url='https://github.com/mixpanel/mixpanel-utils',
-    python_requires='>=3.10',
+    python_requires='>=3',
     extras_require={
         'streaming': [
             'httpx>=0.27',

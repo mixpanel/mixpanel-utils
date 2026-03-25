@@ -1,8 +1,10 @@
 """Async generator pipeline for streaming data through transforms to Mixpanel.
 
-Each stage is an async generator: async def stage(source, job) -> AsyncIterator
+Each stage is an async generator: async def stage(source, job) -> AsyncIterator.
 Stages are chained together and consume records lazily with natural backpressure.
 """
+
+from __future__ import annotations
 
 import asyncio
 import json

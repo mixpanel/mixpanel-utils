@@ -1,5 +1,7 @@
 """HTTP client for sending data to Mixpanel APIs."""
 
+from __future__ import annotations
+
 import asyncio
 import gzip
 import json

@@ -1,5 +1,7 @@
 """PostHog to Mixpanel vendor transforms."""
 
+from __future__ import annotations
+
 import re
 import json
 from dateutil import parser as dateparser

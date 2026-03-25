@@ -4,6 +4,8 @@ Each factory function returns a callable: (record: dict) -> dict | list | None
 Returning {} or None skips the record. Returning a list explodes into multiple records.
 """
 
+from __future__ import annotations
+
 import json
 import mmh3
 from dateutil import parser as dateparser

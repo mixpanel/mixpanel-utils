@@ -1,5 +1,7 @@
 """Amplitude to Mixpanel vendor transforms."""
 
+from __future__ import annotations
+
 import mmh3
 from dateutil import parser as dateparser
 from datetime import timezone

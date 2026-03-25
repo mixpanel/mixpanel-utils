@@ -1,5 +1,7 @@
 """Type definitions for the streaming pipeline."""
 
+from __future__ import annotations
+
 from enum import Enum
 from typing import TypedDict, Any, Callable, Optional
 
