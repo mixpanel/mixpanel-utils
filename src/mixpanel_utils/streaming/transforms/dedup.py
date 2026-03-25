@@ -1,7 +1,6 @@
 """Content-based deduplication using MurmurHash."""
 
 import json
-import mmh3
 
 
 def dedupe_records(job):
@@ -13,6 +12,7 @@ def dedupe_records(job):
     hash_table = job.hash_table  # set()
 
     def transform(record):
+        import mmh3
         h = mmh3.hash(json.dumps(record, sort_keys=True), signed=False)
         if h in hash_table:
             job.duplicates += 1

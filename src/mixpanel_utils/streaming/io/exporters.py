@@ -11,8 +11,6 @@ import logging
 from pathlib import Path
 from typing import AsyncIterator
 
-import httpx
-
 logger = logging.getLogger(__name__)
 
 
@@ -42,6 +40,8 @@ async def export_events(filename: str, job) -> list | str:
     all_results = []
     max_retries = job.max_retries or 5
     retry_count = 0
+
+    import httpx
 
     while retry_count <= max_retries:
         try:
@@ -173,6 +173,8 @@ async def export_profiles(folder: str, job) -> list:
     entity_name = "group" if job.data_group_id else "users"
     all_results = []
     iterations = 0
+
+    import httpx
 
     async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=10.0)) as client:
         # First request
@@ -306,6 +308,8 @@ async def stream_events(job) -> AsyncIterator[dict]:
     if job.auth:
         headers["Authorization"] = job.auth
 
+    import httpx
+
     async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=10.0)) as client:
         async with client.stream("GET", job.url, params=params, headers=headers) as response:
             response.raise_for_status()
@@ -349,6 +353,8 @@ async def stream_profiles(job) -> AsyncIterator[dict]:
     page = 0
     session_id = None
 
+    import httpx
+
     async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=10.0)) as client:
         while True:
             params["page"] = page
@@ -386,11 +392,13 @@ async def stream_profiles(job) -> AsyncIterator[dict]:
 # ── Helpers ─────────────────────────────────────────────────────────
 
 async def _profile_request(
-    client: httpx.AsyncClient, url: str, headers: dict,
+    client, url: str, headers: dict,
     params: dict, body: str | None, job,
     max_retries: int = 5,
-) -> httpx.Response:
+):
     """Make a profile export request with retry logic."""
+    import httpx
+
     for attempt in range(max_retries + 1):
         try:
             response = await client.post(url, headers=headers, params=params, content=body)

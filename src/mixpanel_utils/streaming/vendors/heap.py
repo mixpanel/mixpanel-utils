@@ -2,7 +2,6 @@
 
 import hashlib
 import json
-from dateutil import parser as dateparser
 from datetime import timezone
 from pathlib import Path
 
@@ -57,6 +56,8 @@ def _parse_heap_id(id_str: str) -> str:
 
 def _parse_time(time_str) -> int:
     """Parse a time value to milliseconds."""
+    from dateutil import parser as dateparser
+
     if isinstance(time_str, (int, float)):
         val = int(time_str)
         if len(str(abs(val))) >= 13:
@@ -155,6 +156,8 @@ def heap_user_to_mp(options: dict):
 
         if not user_id and not custom_id:
             return {}
+
+        from dateutil import parser as dateparser
 
         for field in ("last_modified", "joindate", "identity_time"):
             if heap_user.get(field):

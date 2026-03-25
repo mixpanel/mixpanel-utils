@@ -7,8 +7,6 @@ Returning {} or None skips the record. Returning a list explodes into multiple r
 from __future__ import annotations
 
 import json
-import mmh3
-from dateutil import parser as dateparser
 from datetime import datetime, timezone
 
 from ..constants import (
@@ -48,6 +46,7 @@ def _parse_time(val) -> int | None:
         except (ValueError, TypeError):
             pass
         try:
+            from dateutil import parser as dateparser
             dt = dateparser.parse(val)
             if dt:
                 if dt.tzinfo is None:
@@ -113,6 +112,7 @@ def _transform_event(job):
         # 3. Add $insert_id if missing
         if not props.get("$insert_id"):
             try:
+                import mmh3
                 tuple_str = "-".join([
                     str(record.get("event", "")),
                     str(props.get("distinct_id", "")),
@@ -534,6 +534,8 @@ def set_distinct_id_from_v2_props():
 def add_insert(insert_tuple):
     """Add $insert_id based on a tuple of keys or hash the whole record."""
     def transform(record):
+        import mmh3
+
         if not record:
             return {}
         if not insert_tuple:

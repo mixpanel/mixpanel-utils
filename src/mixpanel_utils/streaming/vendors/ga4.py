@@ -1,8 +1,5 @@
 """Google Analytics 4 to Mixpanel vendor transforms."""
 
-import mmh3
-
-
 def _flatten_ga_params(ga_params) -> dict:
     """Flatten GA4 event_params array [{key, value: {string_value/int_value/...}}] to flat dict."""
     result = {}
@@ -112,6 +109,8 @@ def ga_events_to_mp(options: dict):
         raise ValueError("insert_id_tup must be a list")
 
     def transform(ga_event: dict) -> dict:
+        import mmh3
+
         mp_event = {
             "event": ga_event.get("event_name", ""),
             "properties": {

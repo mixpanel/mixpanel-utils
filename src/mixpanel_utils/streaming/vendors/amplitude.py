@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import mmh3
-from dateutil import parser as dateparser
 from datetime import timezone
 
 # Amplitude → Mixpanel default property mappings
@@ -35,6 +33,9 @@ def amp_events_to_mp(options: dict):
     include_experiment_props = options.get("includeExperimentProps", False)
 
     def transform(amp_event: dict) -> dict | None:
+        import mmh3
+        from dateutil import parser as dateparser
+
         event_name = amp_event.get("event_type", "")
 
         # Skip experiment events

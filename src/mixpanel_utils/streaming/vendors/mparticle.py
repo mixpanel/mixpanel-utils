@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import mmh3
-
 BAD_USER_IDS = {
     "-1", "0", "00000000-0000-0000-0000-000000000000", "<nil>", "]",
     "anon", "anonymous", "false", "lmy47d", "n/a", "na", "nil", "none",
@@ -56,6 +54,8 @@ def mparticle_events_to_mixpanel(options: dict):
     include_source_info = options.get("source_info", True)
 
     def transform(mp_batch: dict) -> list[dict]:
+        import mmh3
+
         events = mp_batch.get("events", [])
         user_identities = mp_batch.get("user_identities", []) or []
 

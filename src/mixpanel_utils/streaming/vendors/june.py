@@ -1,8 +1,6 @@
 """June.so to Mixpanel vendor transforms."""
 
 import json
-import mmh3
-from dateutil import parser as dateparser
 from datetime import timezone
 
 # June → Mixpanel field mappings
@@ -36,6 +34,9 @@ def june_events_to_mp(options: dict = None):
     v2_compat = options.get("v2compat", True)
 
     def transform(june_event: dict) -> dict:
+        import mmh3
+        from dateutil import parser as dateparser
+
         anonymous_id = june_event.get("anonymous_id", "")
         context = _safe_json_parse(june_event.get("context", "{}"))
         name = june_event.get("name", "")

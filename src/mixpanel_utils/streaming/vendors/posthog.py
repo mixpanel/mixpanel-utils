@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 import json
-from dateutil import parser as dateparser
 from datetime import datetime, timezone
 
 
@@ -74,6 +73,8 @@ def posthog_events_to_mp(options: dict, heavy_objects: dict | None = None):
     ignore_event_pattern = _build_regex(ignore_events)
 
     def transform(posthog_event: dict) -> dict | None:
+        from dateutil import parser as dateparser
+
         event_name = posthog_event.get("event", "")
         posthog_distinct_id = posthog_event.get("distinct_id")
         mp_ip = posthog_event.get("ip")
@@ -201,6 +202,8 @@ def posthog_person_to_mp_profile(options: dict, heavy_objects: dict | None = Non
     delete_prop_pattern = _build_regex(delete_prefixes)
 
     def transform(posthog_person: dict) -> dict | None:
+        from dateutil import parser as dateparser
+
         distinct_id = posthog_person.get("distinct_id")
         created_at = posthog_person.get("created_at")
         user_properties = posthog_person.get("properties", {}) or {}
