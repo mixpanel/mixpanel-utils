@@ -146,6 +146,17 @@ class MixpanelUtils(object):
         else:
             MixpanelUtils.LOGGER.setLevel(logging.WARNING)
 
+    @property
+    def stream(self):
+        """Async streaming interface for high-throughput import/export.
+
+        Requires streaming extras: pip install mixpanel-utils[streaming]
+        """
+        if not hasattr(self, '_stream'):
+            from .streaming import StreamInterface
+            self._stream = StreamInterface(self)
+        return self._stream
+
     @staticmethod
     def export_data(
             data, output_file, append_mode=False, format="json", compress=False
