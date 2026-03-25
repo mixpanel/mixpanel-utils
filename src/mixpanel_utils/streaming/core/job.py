@@ -71,6 +71,13 @@ async def _build_map_from_path(file_path: str, key_one: str, key_two: str) -> di
     return {r[key_one]: r[key_two] for r in records if key_one in r and key_two in r}
 
 
+def _get_term_width() -> int:
+    try:
+        return os.get_terminal_size().columns
+    except (ValueError, OSError, AttributeError):
+        return 120
+
+
 def _default_progress(job):
     """Overwrite current terminal line with live import stats."""
     elapsed = job.timer.elapsed()
@@ -81,24 +88,16 @@ def _default_progress(job):
     mins, secs = divmod(rem, 60)
     time_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
     eps = int(job.success / elapsed) if elapsed > 0 else 0
-    rps = job.requests / elapsed if elapsed > 0 else 0
-    mbps = (job.bytes_processed / 1_000_000) / elapsed if elapsed > 0 else 0
     line = (
-        f"total: {job.records_processed:,} | "
-        f"success: {job.success:,} | "
-        f"failed: {job.failed:,} | "
-        f"empty: {job.empty:,} | "
-        f"req: {job.requests:,} | "
-        f"eps: {eps:,} | "
-        f"rps: {rps:.1f} | "
-        f"mbps: {mbps:.3f} | "
-        f"time: {time_str}"
+        f"  {job.records_processed:,} records | "
+        f"{job.success:,} ok | "
+        f"{job.failed:,} err | "
+        f"{job.requests:,} req | "
+        f"{eps:,} eps | "
+        f"{time_str}"
     )
-    try:
-        term_width = os.get_terminal_size(fallback=(80, 24)).columns
-    except (ValueError, OSError):
-        term_width = 80
-    print("\r" + line[:term_width].ljust(term_width), end="", flush=True)
+    w = _get_term_width()
+    print("\r" + line[:w].ljust(w), end="", flush=True)
 
 
 class Job:
