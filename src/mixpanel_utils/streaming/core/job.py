@@ -98,6 +98,9 @@ def _default_progress(job):
         f"{eps:,} eps | "
         f"{time_str}"
     )
+    if job.errors:
+        top_err = max(job.errors, key=job.errors.get)
+        line += f" | {top_err}"
     w = _get_term_width()
     print("\r" + line[:w].ljust(w), end="", flush=True)
 

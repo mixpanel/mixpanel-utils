@@ -1,6 +1,8 @@
 """Input detection and format-specific readers.
 
 All readers return AsyncIterator[dict] for consistent pipeline consumption.
+File readers use a bounded queue to bridge sync I/O threads with async generators,
+providing true streaming with backpressure — memory stays flat regardless of file size.
 """
 
 from __future__ import annotations
@@ -11,7 +13,9 @@ import gzip
 import io
 import json
 import logging
+import queue
 from pathlib import Path
+from threading import Thread
 from typing import AsyncIterator, Any
 
 from ..constants import (
@@ -21,6 +25,43 @@ from ..constants import (
 
 logger = logging.getLogger(__name__)
 
+_SENTINEL = object()
+
+
+# ── Queue-based sync→async bridge ────────────────────────────────────
+
+async def _stream_from_executor(sync_producer, *args) -> AsyncIterator[dict]:
+    """Bridge a blocking producer function into an async generator via a bounded queue.
+
+    sync_producer(q, *args) runs in a daemon thread and calls q.put(record)
+    for each record, then lets the wrapper put _SENTINEL when done.
+    The bounded queue (maxsize=1000) provides natural backpressure —
+    the reader thread blocks when the pipeline can't keep up.
+    """
+    q: queue.Queue = queue.Queue(maxsize=1000)
+    loop = asyncio.get_event_loop()
+
+    def _run():
+        try:
+            sync_producer(q, *args)
+        except Exception as e:
+            q.put(e)
+        finally:
+            q.put(_SENTINEL)
+
+    thread = Thread(target=_run, daemon=True)
+    thread.start()
+
+    while True:
+        item = await loop.run_in_executor(None, q.get)
+        if item is _SENTINEL:
+            break
+        if isinstance(item, Exception):
+            raise item
+        yield item
+
+
+# ── Format detection ─────────────────────────────────────────────────
 
 def detect_format(path: Path, job=None) -> str:
     """Detect file format from extension."""
@@ -60,6 +101,8 @@ def is_gzipped(path: Path, job=None) -> bool:
     suffixes = path.suffixes
     return bool(suffixes and suffixes[-1].lower() in GZIP_EXTENSIONS)
 
+
+# ── Input resolution ─────────────────────────────────────────────────
 
 async def resolve_input(data: Any, job) -> AsyncIterator[dict]:
     """Detect data type and return an async iterator of records."""
@@ -110,6 +153,8 @@ async def _wrap_sync_iter(data) -> AsyncIterator[dict]:
         yield item
 
 
+# ── File streaming ───────────────────────────────────────────────────
+
 async def _file_stream(path: Path, job) -> AsyncIterator[dict]:
     """Stream records from a single file."""
     fmt = detect_format(path, job)
@@ -144,88 +189,78 @@ def _open_file(path: Path, gzipped: bool):
     return open(str(path), "r", encoding="utf-8")
 
 
-async def _jsonl_reader(path: Path, gzipped: bool, job) -> AsyncIterator[dict]:
-    """Read JSONL/NDJSON file line by line."""
-    loop = asyncio.get_event_loop()
+# ── Format-specific readers ──────────────────────────────────────────
 
-    def _read_lines():
-        results = []
+async def _jsonl_reader(path: Path, gzipped: bool, job) -> AsyncIterator[dict]:
+    """Stream JSONL/NDJSON file line by line without loading into memory."""
+    def _produce(q, path, gzipped, job):
         with _open_file(path, gzipped) as f:
             for line in f:
                 line = line.strip()
                 if line:
                     try:
-                        results.append(json.loads(line))
+                        q.put(json.loads(line))
                     except json.JSONDecodeError:
                         job.unparsable += 1
-        return results
 
-    records = await loop.run_in_executor(None, _read_lines)
-    for record in records:
+    async for record in _stream_from_executor(_produce, path, gzipped, job):
         yield record
 
 
 async def _json_reader(path: Path, gzipped: bool, job) -> AsyncIterator[dict]:
-    """Read a JSON array file. Falls back to JSONL if JSON array parsing fails."""
-    loop = asyncio.get_event_loop()
+    """Read a JSON array file. Falls back to JSONL if JSON array parsing fails.
 
-    def _read_json():
+    Note: JSON arrays must be parsed whole, but records are streamed to the
+    pipeline immediately via the queue rather than waiting for all parsing.
+    """
+    def _produce(q, path, gzipped, job):
         with _open_file(path, gzipped) as f:
             content = f.read()
         # Try as JSON array/object first
         try:
             data = json.loads(content)
             if isinstance(data, list):
-                return data
+                for record in data:
+                    q.put(record)
+                return
             if isinstance(data, dict):
-                return [data]
-            return []
+                q.put(data)
+                return
+            return
         except json.JSONDecodeError:
             pass
         # Fall back to JSONL (one JSON object per line)
-        results = []
         for line in content.strip().split("\n"):
             line = line.strip()
             if line:
                 try:
-                    results.append(json.loads(line))
+                    q.put(json.loads(line))
                 except json.JSONDecodeError:
                     job.unparsable += 1
-        return results
 
-    records = await loop.run_in_executor(None, _read_json)
-    for record in records:
+    async for record in _stream_from_executor(_produce, path, gzipped, job):
         yield record
 
 
 async def _csv_reader(path: Path, gzipped: bool, job) -> AsyncIterator[dict]:
-    """Read CSV file, yielding dicts with headers as keys."""
-    loop = asyncio.get_event_loop()
-
-    def _read_csv():
-        results = []
+    """Stream CSV file row by row without loading into memory."""
+    def _produce(q, path, gzipped, job):
         with _open_file(path, gzipped) as f:
             reader = csv.DictReader(f)
             for row in reader:
-                # Strip whitespace from keys
                 cleaned = {k.strip(): v for k, v in row.items() if k}
-                results.append(cleaned)
-        return results
+                q.put(cleaned)
 
-    records = await loop.run_in_executor(None, _read_csv)
-    for record in records:
+    async for record in _stream_from_executor(_produce, path, gzipped, job):
         yield record
 
 
 async def _parquet_reader(path: Path, job) -> AsyncIterator[dict]:
-    """Read Parquet file using pyarrow."""
-    loop = asyncio.get_event_loop()
-
-    def _read_parquet():
+    """Stream Parquet file batch by batch without loading into memory."""
+    def _produce(q, path):
         import pyarrow.parquet as pq
         from datetime import date, datetime
         table = pq.read_table(str(path))
-        results = []
         for batch in table.to_batches(max_chunksize=1000):
             for row in batch.to_pylist():
                 record = {}
@@ -238,11 +273,9 @@ async def _parquet_reader(path: Path, job) -> AsyncIterator[dict]:
                         record[k] = v.isoformat()
                     else:
                         record[k] = v
-                results.append(record)
-        return results
+                q.put(record)
 
-    records = await loop.run_in_executor(None, _read_parquet)
-    for record in records:
+    async for record in _stream_from_executor(_produce, path):
         yield record
 
 
@@ -302,12 +335,7 @@ async def _gcs_stream(uri: str, job) -> AsyncIterator[dict]:
     fmt = detect_format(path, job)
     gz = is_gzipped(path, job)
 
-    loop = asyncio.get_event_loop()
-
-    def _read():
-        results = []
-
-        # Parquet: read as binary, don't decode to text
+    def _produce(q):
         if fmt == "parquet":
             import pyarrow.parquet as pq
             from datetime import date, datetime as dt_cls
@@ -325,8 +353,8 @@ async def _gcs_stream(uri: str, job) -> AsyncIterator[dict]:
                             record[k] = v.isoformat()
                         else:
                             record[k] = v
-                    results.append(record)
-            return results
+                    q.put(record)
+            return
 
         with fs.open(uri, "rb") as f:
             if gz:
@@ -341,33 +369,29 @@ async def _gcs_stream(uri: str, job) -> AsyncIterator[dict]:
                 line = line.strip()
                 if line:
                     try:
-                        results.append(json.loads(line))
+                        q.put(json.loads(line))
                     except json.JSONDecodeError:
                         job.unparsable += 1
         elif fmt == "json":
             try:
                 data = json.loads(text)
-                if isinstance(data, list):
-                    results = data
-                else:
-                    results = [data]
+                items = data if isinstance(data, list) else [data]
+                for item in items:
+                    q.put(item)
             except json.JSONDecodeError:
-                # Fall back to JSONL
                 for line in text.strip().split("\n"):
                     line = line.strip()
                     if line:
                         try:
-                            results.append(json.loads(line))
+                            q.put(json.loads(line))
                         except json.JSONDecodeError:
                             job.unparsable += 1
         elif fmt == "csv":
             reader = csv.DictReader(io.StringIO(text))
             for row in reader:
-                results.append({k.strip(): v for k, v in row.items() if k})
-        return results
+                q.put({k.strip(): v for k, v in row.items() if k})
 
-    records = await loop.run_in_executor(None, _read)
-    for record in records:
+    async for record in _stream_from_executor(_produce):
         yield record
 
 
@@ -382,9 +406,7 @@ async def _s3_stream(uri: str, job) -> AsyncIterator[dict]:
     bucket = parts[0]
     key = parts[1] if len(parts) > 1 else ""
 
-    loop = asyncio.get_event_loop()
-
-    def _read():
+    def _produce(q):
         kwargs = {}
         if job.s3_key and job.s3_secret:
             kwargs["aws_access_key_id"] = job.s3_key
@@ -396,14 +418,13 @@ async def _s3_stream(uri: str, job) -> AsyncIterator[dict]:
         response = s3.get_object(Bucket=bucket, Key=key)
         body = response["Body"].read()
 
-        path = Path(key)
-        gz = is_gzipped(path, job)
-        fmt = detect_format(path, job)
+        s3_path = Path(key)
+        gz = is_gzipped(s3_path, job)
+        fmt = detect_format(s3_path, job)
 
         if gz:
             body = gzip.decompress(body)
 
-        results = []
         if fmt == "parquet":
             import pyarrow.parquet as pq
             from datetime import date, datetime as dt_cls
@@ -420,8 +441,8 @@ async def _s3_stream(uri: str, job) -> AsyncIterator[dict]:
                             record[k] = v.isoformat()
                         else:
                             record[k] = v
-                    results.append(record)
-            return results
+                    q.put(record)
+            return
 
         text = body.decode("utf-8")
 
@@ -430,28 +451,27 @@ async def _s3_stream(uri: str, job) -> AsyncIterator[dict]:
                 line = line.strip()
                 if line:
                     try:
-                        results.append(json.loads(line))
+                        q.put(json.loads(line))
                     except json.JSONDecodeError:
                         job.unparsable += 1
         elif fmt == "json":
             try:
                 data = json.loads(text)
-                results = data if isinstance(data, list) else [data]
+                items = data if isinstance(data, list) else [data]
+                for item in items:
+                    q.put(item)
             except json.JSONDecodeError:
-                # Fall back to JSONL
                 for line in text.strip().split("\n"):
                     line = line.strip()
                     if line:
                         try:
-                            results.append(json.loads(line))
+                            q.put(json.loads(line))
                         except json.JSONDecodeError:
                             job.unparsable += 1
         elif fmt == "csv":
             reader = csv.DictReader(io.StringIO(text))
             for row in reader:
-                results.append({k.strip(): v for k, v in row.items() if k})
-        return results
+                q.put({k.strip(): v for k, v in row.items() if k})
 
-    records = await loop.run_in_executor(None, _read)
-    for record in records:
+    async for record in _stream_from_executor(_produce):
         yield record

@@ -146,6 +146,15 @@ def _transform_event(job):
             if str(props.get(k, "")).lower() in BAD_USER_IDS or props.get(k) is None:
                 props.pop(k, None)
 
+        # 6b. Fallback distinct_id from $user_id or $device_id
+        if not props.get("distinct_id"):
+            if props.get("$user_id"):
+                props["distinct_id"] = props["$user_id"]
+            elif props.get("$device_id"):
+                props["distinct_id"] = props["$device_id"]
+            else:
+                props["distinct_id"] = ""
+
         # 7. Truncate strings
         for k, v in list(props.items()):
             if isinstance(v, str):
