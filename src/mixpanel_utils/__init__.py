@@ -82,7 +82,7 @@ class MixpanelUtils(object):
         :param residency: residency for your project. Accepts "us", "eu", or "in". (Default value = "us")
         :type service_account_username: str
         :type service_account_password: str
-        :type project_id: int
+        :type project_id: int or str (numeric strings are accepted and coerced to int)
         :type token: str
         :type strict_import: bool
         :type timeout: int
@@ -104,7 +104,13 @@ class MixpanelUtils(object):
             raise ValueError(_migration_help)
         if not isinstance(service_account_password, str) or not service_account_password:
             raise ValueError(_migration_help)
-        if not isinstance(project_id, int) or project_id <= 0:
+        if isinstance(project_id, float):
+            raise ValueError(_migration_help)
+        try:
+            project_id = int(project_id)
+        except (TypeError, ValueError):
+            raise ValueError(_migration_help)
+        if project_id <= 0:
             raise ValueError(_migration_help)
         _valid_residencies = ("us", "eu", "in")
         if residency not in _valid_residencies:

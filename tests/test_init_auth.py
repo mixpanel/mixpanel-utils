@@ -15,6 +15,16 @@ def test_init_succeeds_with_required_service_account_fields():
     assert client.project_id == 1234567
 
 
+def test_init_accepts_string_project_id():
+    client = MixpanelUtils(
+        service_account_username="test.a12345.mp-service-account",
+        service_account_password="test123TEST123abc1234testing",
+        project_id="1234567",
+    )
+
+    assert client.project_id == 1234567
+
+
 @pytest.mark.parametrize(
     "kwargs",
     [
@@ -59,8 +69,8 @@ _VALID = dict(
         ({"service_account_password": None}, "None password"),
         ({"project_id": 0}, "zero project_id"),
         ({"project_id": -1}, "negative project_id"),
-        ({"project_id": "1234567"}, "string project_id"),
         ({"project_id": 1.5}, "float project_id"),
+        ({"project_id": "abc"}, "non-numeric string project_id"),
     ],
 )
 def test_init_raises_value_error_for_invalid_field_values(override, description):
