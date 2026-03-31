@@ -70,6 +70,7 @@ _VALID = dict(
         ({"project_id": 0}, "zero project_id"),
         ({"project_id": -1}, "negative project_id"),
         ({"project_id": 1.5}, "float project_id"),
+        ({"project_id": "abc"}, "non-numeric string project_id"),
     ],
 )
 def test_init_raises_value_error_for_invalid_field_values(override, description):

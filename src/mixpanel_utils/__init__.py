@@ -82,7 +82,7 @@ class MixpanelUtils(object):
         :param residency: residency for your project. Accepts "us", "eu", or "in". (Default value = "us")
         :type service_account_username: str
         :type service_account_password: str
-        :type project_id: int
+        :type project_id: int or str (numeric strings are accepted and coerced to int)
         :type token: str
         :type strict_import: bool
         :type timeout: int
