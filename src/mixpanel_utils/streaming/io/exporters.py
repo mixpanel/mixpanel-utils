@@ -38,6 +38,7 @@ async def export_events(filename: str, job) -> list | str:
         headers["Authorization"] = job.auth
 
     all_results = []
+    record_count = 0
     max_retries = job.max_retries or 5
     retry_count = 0
 

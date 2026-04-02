@@ -136,7 +136,10 @@ async def helper_transforms(source: AsyncIterator[dict], job) -> AsyncIterator[d
         skip = False
         for fn in transforms:
             result = fn(record)
-            if result is None or (isinstance(result, dict) and len(result) == 0):
+            if result is None:
+                skip = True
+                break
+            if isinstance(result, dict) and len(result) == 0:
                 job.empty += 1
                 skip = True
                 break

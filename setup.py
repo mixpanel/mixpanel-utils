@@ -21,7 +21,7 @@ setup(
             'aiofiles>=23.0',
         ],
         'streaming-gcs': ['gcsfs>=2024.1'],
-        'streaming-s3': ['aiobotocore>=2.9'],
+        'streaming-s3': ['boto3>=1.26'],
         'streaming-all': [
             'httpx>=0.27',
             'click>=8.0',
@@ -30,7 +30,7 @@ setup(
             'python-dateutil>=2.8',
             'aiofiles>=23.0',
             'gcsfs>=2024.1',
-            'aiobotocore>=2.9',
+            'boto3>=1.26',
         ],
     },
     entry_points={

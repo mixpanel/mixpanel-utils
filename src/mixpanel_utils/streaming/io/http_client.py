@@ -83,7 +83,6 @@ class MixpanelHttpClient:
 
                 if resp.status_code in RETRY_STATUS_CODES and attempt < job.max_retries:
                     job.retries += 1
-                    job.requests += 1
                     if resp.status_code == 429:
                         job.rate_limited += 1
                     elif str(resp.status_code).startswith("5"):
@@ -108,7 +107,6 @@ class MixpanelHttpClient:
                     httpx.PoolTimeout, httpx.ConnectTimeout) as e:
                 if attempt < job.max_retries:
                     job.retries += 1
-                    job.requests += 1
                     job.client_errors += 1
                     delay = min(2 ** attempt, 30)
                     if job.verbose:

@@ -24,16 +24,6 @@ def _truncate(s: str) -> str:
     return s[:MAX_STR_LEN] if len(s) > MAX_STR_LEN else s
 
 
-def _is_not_empty(data) -> bool:
-    if data is None:
-        return False
-    if not isinstance(data, (dict, list)):
-        return False
-    if isinstance(data, list):
-        return len(data) > 0
-    return len(data) > 0
-
-
 def _parse_time(val) -> int | None:
     """Try to parse a time value to unix epoch ms."""
     if val is None:

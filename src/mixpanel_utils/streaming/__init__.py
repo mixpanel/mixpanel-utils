@@ -3,7 +3,6 @@
 Public API:
     mp_import(creds, data, options) — main async import function
     MpStream — push-based streaming interface
-    validate_token(token) — validate a Mixpanel project token
     StreamInterface — async interface attached to MixpanelUtils instances
 """
 
@@ -88,27 +87,6 @@ async def mp_import(
         await http_client.close()
 
 
-async def validate_token(token: str) -> dict:
-    """Validate a Mixpanel project token and detect ID management version."""
-    import httpx
-
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            "https://api.mixpanel.com/track",
-            json=[{
-                "event": "$mp_web_page_view",
-                "properties": {"token": token, "distinct_id": "token_validation_test"}
-            }],
-        )
-        try:
-            data = resp.json()
-            valid = data.get("status") == 1 or resp.status_code == 200
-        except Exception:
-            valid = False
-
-        return {"token": token, "valid": valid}
-
-
 class MpStream:
     """Push-based streaming interface for piping data into Mixpanel.
 
@@ -142,6 +120,7 @@ class MpStream:
             result = await core_pipeline(source, self._job, self._http_client)
             return result
         finally:
+            self._buffer.clear()
             await self._http_client.close()
 
 
@@ -252,7 +231,7 @@ class StreamInterface:
     async def export_import_groups(self, options: dict | None = None) -> dict:
         """Export group profiles and re-import them."""
         creds = self._build_creds()
-        opts = self._merge_opts(options, record_type="export-import-profile")
+        opts = self._merge_opts(options, record_type="export-import-group")
         if getattr(self._parent, "data_group_id", None):
             opts.setdefault("data_group_id", self._parent.data_group_id)
         return await mp_import(creds, None, opts)
