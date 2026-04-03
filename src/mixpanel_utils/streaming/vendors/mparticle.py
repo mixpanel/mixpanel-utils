@@ -143,7 +143,7 @@ def mparticle_events_to_mixpanel(options: dict):
                 mp["properties"]["$insert_id"] = insert_id
             else:
                 tuple_str = "-".join([anon_id, str(timestamp), event_type])
-                mp["properties"]["$insert_id"] = str(mmh3.hash(tuple_str) & 0xFFFFFFFF)
+                mp["properties"]["$insert_id"] = str(mmh3.hash(tuple_str, signed=False))
 
             # Custom event name
             if event_type == "custom_event":

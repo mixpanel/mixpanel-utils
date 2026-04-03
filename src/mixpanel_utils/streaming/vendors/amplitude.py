@@ -8,7 +8,6 @@ from datetime import timezone
 AMP_MIX_PAIRS = [
     ("app_version", "$app_version_string"),
     ("os_name", "$os"),
-    ("os_name", "$browser"),
     ("os_version", "$os_version"),
     ("device_brand", "$brand"),
     ("device_manufacturer", "$manufacturer"),
@@ -76,7 +75,7 @@ def amp_events_to_mp(options: dict):
                 str(event_time),
                 str(event_name),
             ])
-            mp_event["properties"]["$insert_id"] = str(mmh3.hash(tuple_str) & 0xFFFFFFFF)
+            mp_event["properties"]["$insert_id"] = str(mmh3.hash(tuple_str, signed=False))
 
         # Canonical ID resolution
         user_props = amp_event.get("user_properties", {}) or {}

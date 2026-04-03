@@ -51,12 +51,9 @@ class MixpanelHttpClient:
             "Connection": "keep-alive",
         }
 
-        # Gzip compress for events/scd
-        encoding = ""
         if job.record_type in GZIP_RECORD_TYPES and job.compress:
             body_bytes = gzip.compress(body_bytes, compresslevel=job.compression_level)
             headers["Content-Encoding"] = "gzip"
-            encoding = "gzip"
 
         params: dict[str, Any] = {
             "ip": "0",

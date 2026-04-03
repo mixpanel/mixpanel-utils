@@ -238,7 +238,7 @@ def _save_log(result: dict):
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     filename = f"mixpanel-import-{timestamp}.json"
 
-    log_data = {k: v for k, v in result.items() if k != "dry_run" or v}
+    log_data = {k: v for k, v in result.items() if k != "dry_run" and v}
     with open(filename, "w") as f:
         json.dump(log_data, f, indent=2, default=str)
     click.echo(f"  Log saved: {filename}")

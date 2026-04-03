@@ -117,8 +117,7 @@ def posthog_events_to_mp(options: dict, heavy_objects: dict | None = None):
         }
         _add_if_defined(mp_props, "ip", mp_ip)
         _add_if_defined(mp_props, "$city", mp_city)
-        _add_if_defined(mp_props, "$region", mp_country_code)
-        _add_if_defined(mp_props, "mp_country_code", posthog_event.get("country"))
+        _add_if_defined(mp_props, "mp_country_code", mp_country_code)
         _add_if_defined(mp_props, "$insert_id", mp_insert_id)
         _add_if_defined(mp_props, "$latitude", mp_latitude)
         _add_if_defined(mp_props, "$longitude", mp_longitude)

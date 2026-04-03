@@ -15,12 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 def _is_not_empty(data) -> bool:
-    if data is None:
-        return False
     if not isinstance(data, (dict, list)):
         return False
-    if isinstance(data, list):
-        return len(data) > 0
     return len(data) > 0
 
 
@@ -58,7 +54,7 @@ async def vendor_transform(source: AsyncIterator[dict], job) -> AsyncIterator[di
         if result is None:
             job.empty += 1
         elif isinstance(result, list):
-            yield result  # Will be flattened downstream
+            yield result
         elif _is_not_empty(result):
             yield result
         else:
@@ -94,7 +90,7 @@ async def user_transform(source: AsyncIterator[dict], job) -> AsyncIterator[dict
         if result is None:
             job.empty += 1
         elif isinstance(result, list):
-            yield result  # Will be flattened downstream
+            yield result
         elif _is_not_empty(result):
             yield result
         else:
@@ -244,7 +240,6 @@ async def send_batches(batches: AsyncIterator[list[dict]], job, http_client):
         tasks.add(task)
         task.add_done_callback(tasks.discard)
 
-        # Check for errors
         if errors:
             logger.error(f"Stopping due to errors: {errors}")
             break

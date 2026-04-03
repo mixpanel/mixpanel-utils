@@ -116,7 +116,7 @@ async def resolve_input(data: Any, job) -> AsyncIterator[dict]:
 
     # Sync iterable (generator, etc.) but not string
     if hasattr(data, "__iter__") and not isinstance(data, (str, bytes)):
-        return _wrap_sync_iter(data)
+        return _iter_list(data)
 
     # String: file path, directory, glob, or cloud URL
     if isinstance(data, str):
@@ -143,12 +143,7 @@ async def resolve_input(data: Any, job) -> AsyncIterator[dict]:
     raise ValueError(f"Cannot determine data type for {type(data)}")
 
 
-async def _iter_list(data: list) -> AsyncIterator[dict]:
-    for item in data:
-        yield item
-
-
-async def _wrap_sync_iter(data) -> AsyncIterator[dict]:
+async def _iter_list(data) -> AsyncIterator[dict]:
     for item in data:
         yield item
 
@@ -321,9 +316,7 @@ async def _gcs_stream(uri: str, job) -> AsyncIterator[dict]:
     except ImportError:
         raise ImportError('Install gcsfs for GCS support: pip install "mixpanel-utils[streaming-gcs]"')
 
-    # Parse gs://bucket/path
     parts = uri.replace("gs://", "").split("/", 1)
-    bucket = parts[0]
     key = parts[1] if len(parts) > 1 else ""
 
     fs = gcsfs.GCSFileSystem(

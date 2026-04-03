@@ -387,7 +387,6 @@ def add_token(job):
 
 
 def remove_nulls(values_to_remove=None):
-    """Remove null/empty values from records."""
     if values_to_remove is None:
         values_to_remove = [None, ""]
 
@@ -407,7 +406,6 @@ def remove_nulls(values_to_remove=None):
 
 
 def flatten_properties(sep="."):
-    """Flatten nested objects in properties."""
     def _flatten(obj, roots=None):
         if roots is None:
             roots = []
@@ -432,7 +430,6 @@ def flatten_properties(sep="."):
 
 
 def utc_offset(hours=0):
-    """Offset event timestamps by N hours."""
     offset_ms = hours * 3600 * 1000
 
     def transform(record):
@@ -451,7 +448,6 @@ def utc_offset(hours=0):
 
 
 def fix_time():
-    """Normalize timestamps to unix epoch ms."""
     def transform(record):
         if not record.get("properties"):
             return record
@@ -470,7 +466,6 @@ def fix_time():
 
 
 def fix_json():
-    """Try to parse string values that look like JSON."""
     def _might_be_json(val):
         if not isinstance(val, str):
             return False

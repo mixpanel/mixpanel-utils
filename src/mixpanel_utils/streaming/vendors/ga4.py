@@ -138,7 +138,7 @@ def ga_events_to_mp(options: dict):
                 tuple_parts = [str(ga_event.get(k, "")) for k in insert_id_tup if ga_event.get(k)]
                 event_id = "-".join(tuple_parts)
                 if event_id:
-                    mp_event["properties"]["$insert_id"] = str(mmh3.hash(event_id) & 0xFFFFFFFF)
+                    mp_event["properties"]["$insert_id"] = str(mmh3.hash(event_id, signed=False))
                     mp_event["properties"]["event_id"] = event_id
 
         mp_event["properties"]["$source"] = "ga4-to-mixpanel"

@@ -1,6 +1,5 @@
 """Whitelist/blacklist and epoch-based filtering transforms."""
 
-from datetime import datetime, timezone
 
 
 def whitelist_blacklist(job, params):

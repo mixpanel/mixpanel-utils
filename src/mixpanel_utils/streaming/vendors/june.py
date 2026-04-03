@@ -31,7 +31,7 @@ def _safe_json_parse(val):
 def june_events_to_mp(options: dict = None):
     """Factory: returns transform for June events → Mixpanel events."""
     options = options or {}
-    v2_compat = options.get("v2compat", True)
+    v2_compat = options.get("v2_compat", True)
 
     def transform(june_event: dict) -> dict:
         import mmh3
@@ -70,10 +70,10 @@ def june_events_to_mp(options: dict = None):
         # Insert ID
         delivery_id = properties.get("delivery_id") if isinstance(properties, dict) else None
         if delivery_id:
-            mp_props["$insert_id"] = str(mmh3.hash(str(delivery_id)) & 0xFFFFFFFF)
+            mp_props["$insert_id"] = str(mmh3.hash(str(delivery_id), signed=False))
         else:
             tuple_str = "-".join([str(anonymous_id), str(user_id), str(name), str(timestamp)])
-            mp_props["$insert_id"] = str(mmh3.hash(tuple_str) & 0xFFFFFFFF)
+            mp_props["$insert_id"] = str(mmh3.hash(tuple_str, signed=False))
 
         # Identity
         if anonymous_id:

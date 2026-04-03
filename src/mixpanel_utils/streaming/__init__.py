@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from .core.job import Job
 from .core.pipeline import core_pipeline
-from .io.parsers import resolve_input
+from .io.parsers import resolve_input, _iter_list
 
 __version__ = "1.0.0"
 
@@ -65,12 +65,12 @@ async def mp_import(
         from .io.exporters import delete_profiles
         return await delete_profiles(job)
 
-    if rt == "export-import-profile":
+    if rt in ("export-import-profile", "export-import-group"):
         from .io.exporters import export_profiles
         export_result = await export_profiles("", job)
         if export_result:
             import_opts = dict(options)
-            import_opts["record_type"] = "user"
+            import_opts["record_type"] = "group" if rt == "export-import-group" else "user"
             import_creds = dict(creds or {})
             if job.second_token:
                 import_creds["token"] = job.second_token
@@ -122,11 +122,6 @@ class MpStream:
         finally:
             self._buffer.clear()
             await self._http_client.close()
-
-
-async def _iter_list(data: list):
-    for item in data:
-        yield item
 
 
 class StreamInterface:
