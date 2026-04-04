@@ -2,13 +2,12 @@
 
 import asyncio
 import json
-import os
 import sys
 
 import click
 
 from . import mp_import
-from .utils import comma, bytes_human
+from .utils import comma
 
 
 @click.command(context_settings={"max_content_width": 120})

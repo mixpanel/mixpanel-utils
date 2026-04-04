@@ -10,12 +10,12 @@ from typing import Any, Callable
 
 from ..constants import (
     BASE_URLS, EXPORT_BASE_URLS, ENGAGE_BASE_URLS,
-    EXPORT_RECORD_TYPES, ENGAGE_RECORD_TYPES, GZIP_RECORD_TYPES,
-    HTTP_METHODS, VALID_OPERATIONS, MAX_RECORDS_PER_BATCH,
+    EXPORT_RECORD_TYPES, ENGAGE_RECORD_TYPES,
+    HTTP_METHODS, MAX_RECORDS_PER_BATCH,
     MAX_BYTES_PER_BATCH, DEFAULT_WORKERS, DEFAULT_MAX_RETRIES,
     DEFAULT_COMPRESSION_LEVEL, DEFAULT_EPOCH_START, DEFAULT_EPOCH_END,
 )
-from ..utils import bytes_human, comma, Timer
+from ..utils import bytes_human, Timer
 
 
 def _parse_json_option(val, default=None):
@@ -216,7 +216,6 @@ class Job:
 
         # ── Output Options ───────────────────────────────────────────
         self.output_file_path: str = opts.get("output_file_path", "./mixpanel-transform.json")
-        self.where_dir: str | None = opts.get("where")
         self.progress_callback: Callable | None = opts.get("progress_callback")
         if self.verbose and not self.progress_callback and not self.dry_run and not self.write_to_file:
             self.progress_callback = _default_progress

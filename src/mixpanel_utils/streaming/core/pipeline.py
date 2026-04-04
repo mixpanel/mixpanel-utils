@@ -202,7 +202,7 @@ async def send_batches(batches: AsyncIterator[list[dict]], job, http_client):
             response, success = await http_client.send_batch(batch, job)
 
             # Update counters based on record type
-            if job.record_type in ("event", "scd", "export-import-event"):
+            if job.record_type in ("event", "export-import-event"):
                 job.success += response.get("num_records_imported", 0)
                 failed_records = response.get("failed_records", [])
                 job.failed += len(failed_records) if isinstance(failed_records, list) else 0

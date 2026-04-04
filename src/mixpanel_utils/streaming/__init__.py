@@ -11,15 +11,16 @@ from __future__ import annotations
 from .core.job import Job
 from .core.pipeline import core_pipeline
 from .io.parsers import resolve_input, _iter_list
+from .types import Creds, Options, ImportResults
 
 __version__ = "1.0.0"
 
 
 async def mp_import(
-    creds: dict | None = None,
+    creds: Creds | dict | None = None,
     data=None,
-    options: dict | None = None,
-) -> dict:
+    options: Options | dict | None = None,
+) -> ImportResults:
     """Stream events, users, and groups to Mixpanel.
 
     Args:
@@ -103,7 +104,7 @@ class MpStream:
         self._buffer: list[dict] = []
 
     @classmethod
-    async def create(cls, creds: dict, options: dict | None = None) -> "MpStream":
+    async def create(cls, creds: Creds | dict, options: Options | dict | None = None) -> "MpStream":
         from .io.http_client import MixpanelHttpClient
         options = options or {}
         job = Job(creds, options)
@@ -114,7 +115,7 @@ class MpStream:
     async def push(self, record: dict) -> None:
         self._buffer.append(record)
 
-    async def flush(self) -> dict:
+    async def flush(self) -> ImportResults:
         try:
             source = _iter_list(self._buffer)
             result = await core_pipeline(source, self._job, self._http_client)
@@ -163,7 +164,7 @@ class StreamInterface:
 
     # ── Import Methods ───────────────────────────────────────────────
 
-    async def import_events(self, data, options: dict | None = None) -> dict:
+    async def import_events(self, data, options: Options | dict | None = None) -> ImportResults:
         """Import events to Mixpanel.
 
         Args:
@@ -173,19 +174,19 @@ class StreamInterface:
         opts = self._merge_opts(options, record_type="event")
         return await mp_import(self._build_creds(), data, opts)
 
-    async def import_people(self, data, options: dict | None = None) -> dict:
+    async def import_people(self, data, options: Options | dict | None = None) -> ImportResults:
         """Import user profiles to Mixpanel."""
         opts = self._merge_opts(options, record_type="user")
         return await mp_import(self._build_creds(), data, opts)
 
-    async def import_groups(self, data, options: dict | None = None) -> dict:
+    async def import_groups(self, data, options: Options | dict | None = None) -> ImportResults:
         """Import group profiles to Mixpanel."""
         opts = self._merge_opts(options, record_type="group")
         return await mp_import(self._build_creds(), data, opts)
 
     # ── Export Methods ───────────────────────────────────────────────
 
-    async def export_events(self, filename: str | None = None, options: dict | None = None) -> dict:
+    async def export_events(self, filename: str | None = None, options: Options | dict | None = None) -> ImportResults:
         """Export events from Mixpanel.
 
         Args:
@@ -195,12 +196,12 @@ class StreamInterface:
         opts = self._merge_opts(options, record_type="export")
         return await mp_import(self._build_creds(), filename, opts)
 
-    async def export_people(self, folder: str | None = None, options: dict | None = None) -> dict:
+    async def export_people(self, folder: str | None = None, options: Options | dict | None = None) -> ImportResults:
         """Export user profiles from Mixpanel."""
         opts = self._merge_opts(options, record_type="profile-export")
         return await mp_import(self._build_creds(), folder, opts)
 
-    async def export_groups(self, folder: str | None = None, options: dict | None = None) -> dict:
+    async def export_groups(self, folder: str | None = None, options: Options | dict | None = None) -> ImportResults:
         """Export group profiles from Mixpanel."""
         creds = self._build_creds()
         opts = self._merge_opts(options, record_type="group-export")
@@ -210,7 +211,7 @@ class StreamInterface:
 
     # ── Export + Import (Round-Trip) Methods ──────────────────────────
 
-    async def export_import_events(self, options: dict | None = None) -> dict:
+    async def export_import_events(self, options: Options | dict | None = None) -> ImportResults:
         """Export events from this project and re-import them.
 
         Use 'second_token' in options to import into a different project.
@@ -218,12 +219,12 @@ class StreamInterface:
         opts = self._merge_opts(options, record_type="export-import-event")
         return await mp_import(self._build_creds(), None, opts)
 
-    async def export_import_people(self, options: dict | None = None) -> dict:
+    async def export_import_people(self, options: Options | dict | None = None) -> ImportResults:
         """Export user profiles and re-import them."""
         opts = self._merge_opts(options, record_type="export-import-profile")
         return await mp_import(self._build_creds(), None, opts)
 
-    async def export_import_groups(self, options: dict | None = None) -> dict:
+    async def export_import_groups(self, options: Options | dict | None = None) -> ImportResults:
         """Export group profiles and re-import them."""
         creds = self._build_creds()
         opts = self._merge_opts(options, record_type="export-import-group")

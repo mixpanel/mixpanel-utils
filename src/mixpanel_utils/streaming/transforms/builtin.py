@@ -71,11 +71,7 @@ def _transform_event(job):
         # 1. Ensure properties exists
         if "properties" not in record or not isinstance(record.get("properties"), dict):
             props = {k: v for k, v in record.items() if k not in ("properties", "event")}
-            record["properties"] = props
-            for k in props:
-                if k != "properties" and k != "event":
-                    del record[k]
-            record = {"event": record.get("event", ""), "properties": record.get("properties", {})}
+            record = {"event": record.get("event", ""), "properties": props}
 
         # 1a. Use event_name from properties
         if not record.get("event") and isinstance(record["properties"].get("event_name"), str):
@@ -411,7 +407,7 @@ def flatten_properties(sep="."):
             roots = []
         result = {}
         for key, val in obj.items():
-            if isinstance(val, dict) and not isinstance(val, list):
+            if isinstance(val, dict):
                 result.update(_flatten(val, roots + [key]))
             else:
                 result[sep.join(roots + [key])] = val

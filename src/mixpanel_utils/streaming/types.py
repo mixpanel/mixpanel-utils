@@ -1,42 +1,16 @@
-"""Type definitions for the streaming pipeline."""
+"""Type definitions for the streaming pipeline.
+
+These TypedDicts provide intellisense/autocomplete for the creds and options
+dicts accepted by mp_import(), MpStream, and StreamInterface methods.
+"""
 
 from __future__ import annotations
 
-from enum import Enum
-from typing import TypedDict, Any, Callable, Optional
-
-
-class RecordType(str, Enum):
-    EVENT = "event"
-    USER = "user"
-    GROUP = "group"
-    EXPORT = "export"
-    PROFILE_EXPORT = "profile-export"
-    PROFILE_DELETE = "profile-delete"
-    GROUP_EXPORT = "group-export"
-    GROUP_DELETE = "group-delete"
-    EXPORT_IMPORT_EVENT = "export-import-event"
-    EXPORT_IMPORT_PROFILE = "export-import-profile"
-    EXPORT_IMPORT_GROUP = "export-import-group"
-
-
-class Region(str, Enum):
-    US = "US"
-    EU = "EU"
-    IN = "IN"
-
-
-class Vendor(str, Enum):
-    AMPLITUDE = "amplitude"
-    HEAP = "heap"
-    GA4 = "ga4"
-    POSTHOG = "posthog"
-    MPARTICLE = "mparticle"
-    JUNE = "june"
-    MIXPANEL = "mixpanel"
+from typing import TypedDict, Callable
 
 
 class Creds(TypedDict, total=False):
+    """Mixpanel authentication credentials."""
     acct: str
     pass_: str
     project: int | str
@@ -44,57 +18,59 @@ class Creds(TypedDict, total=False):
     secret: str
     bearer: str
     group_key: str
+    data_group_id: str
     workspace: int | str
     org: int | str
     second_token: str
+    # Cloud storage (can also go in Options)
     gcp_project_id: str
     gcs_credentials: str
     s3_key: str
     s3_secret: str
     s3_region: str
-    data_group_id: str
 
 
 class Options(TypedDict, total=False):
+    """Import/export configuration options."""
     # Core
-    record_type: str
-    region: str
-    stream_format: str
+    record_type: str  # event, user, group, export, profile-export, profile-delete, group-export, group-delete, export-import-event, export-import-profile, export-import-group
+    region: str  # US, EU, IN
+    vendor: str  # amplitude, heap, ga4, posthog, mparticle, june, mixpanel
+    vendor_opts: dict
+    stream_format: str  # jsonl, json, csv, parquet
 
     # Performance
     workers: int
-    concurrency: int
     records_per_batch: int
     bytes_per_batch: int
     max_retries: int
-    high_water: int
-
-    # Compression
     compress: bool
     compression_level: int
-    is_gzip: bool
 
-    # Transforms
+    # Data transforms
     transform_func: Callable
     fix_data: bool
     fix_time: bool
+    fix_json: bool
     remove_nulls: bool
+    flatten: bool
+    add_token: bool
     time_offset: int
     tags: dict
     aliases: dict
-    flatten: bool
-    fix_json: bool
-    add_token: bool
-    directive: str
-
-    # Vendor
-    vendor: str
-    vendor_opts: dict
+    directive: str  # $set, $set_once, $add, $union, $append, $remove, $unset
+    dimension_maps: list
+    insert_id_tuple: list[str]
+    drop_columns: list[str]
+    scrub_props: list[str]
+    v2_compat: bool
+    create_profiles: bool
 
     # Filtering
     dedupe: bool
     epoch_start: int
     epoch_end: int
+    max_records: int | None
     event_whitelist: list[str]
     event_blacklist: list[str]
     prop_key_whitelist: list[str]
@@ -103,10 +79,6 @@ class Options(TypedDict, total=False):
     prop_val_blacklist: list[str]
     combo_white_list: dict[str, list[str]]
     combo_black_list: dict[str, list[str]]
-    scrub_props: list[str]
-
-    # Validation
-    strict: bool
 
     # Export
     start: str
@@ -114,25 +86,36 @@ class Options(TypedDict, total=False):
     where: str
     limit: int
     cohort_id: int
+    params: dict
 
     # Output
+    strict: bool
     verbose: bool
     dry_run: bool
     write_to_file: bool
     logs: bool
     abridged: bool
+    is_gzip: bool
+    output_file_path: str
+    progress_callback: Callable
 
-    # Insert ID
-    insert_id_tuple: list[str]
+    # Cloud storage (can also go in Creds)
+    gcp_project_id: str
+    gcs_credentials: str
+    s3_key: str
+    s3_secret: str
+    s3_region: str
 
-    # Max records
-    max_records: int | None
+    # Group analytics
+    group_key: str
+    data_group_id: str
 
-    # Heavy objects (dimension maps, etc.)
+    # Advanced
     heavy_objects: dict
 
 
 class ImportResults(TypedDict, total=False):
+    """Results returned by mp_import() and streaming methods."""
     record_type: str
     total: int
     success: int
@@ -163,4 +146,3 @@ class ImportResults(TypedDict, total=False):
     dry_run: list
     vendor: str
     vendor_opts: dict
-    files: list[str]
