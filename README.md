@@ -28,6 +28,19 @@
   - [Group Delete](#group-delete)
   - [Query JQL API](#query-the-jql-api)
   - [Import from Amplitude](#import-from-amplitude)
+- [Streaming import/export](#streaming-importexport)
+  - [Streaming installation](#streaming-installation)
+  - [Stream import events](#stream-import-events)
+  - [Stream import people](#stream-import-people)
+  - [Stream import groups](#stream-import-groups)
+  - [Stream export events](#stream-export-events)
+  - [Stream export people](#stream-export-people)
+  - [Stream export groups](#stream-export-groups)
+  - [Cross-project migration](#cross-project-migration)
+  - [Vendor migrations](#vendor-migrations)
+  - [Streaming options reference](#streaming-options-reference)
+- [CLI](#cli)
+  - [CLI examples](#cli-examples)
 - [Advanced scripting techniques](#advanced-scripting-techniques)
   - [Lambda functions](#lambda-functions)
 
@@ -43,6 +56,12 @@ You may install the mixpanel-utils module via pip:
 
 ```
 pip3 install mixpanel-utils
+```
+
+For high-volume streaming import/export and the `mixpanel-utils` CLI, install with the streaming extras:
+
+```
+pip3 install mixpanel-utils[streaming]
 ```
 
 #### Usage
@@ -451,6 +470,250 @@ Note:
 1. Start and end dates are in `YYYYMMDDTHH` format.
 2. start and end date are as per `server_upload_time` as per [Export API doc](https://www.docs.developers.amplitude.com/analytics/apis/export-api/?h=export#considerations).
 3. This script would be for projects on [Original ID Merge](https://docs.mixpanel.com/docs/tracking/how-tos/identifying-users#how-does-the-simplified-api-differ-from-the-original-api) only.
+
+#### Streaming import/export
+
+For high-volume imports, exports, and data migrations, use the async streaming interface via `mputils.stream`. It supports multiple file formats (JSONL, JSON, CSV, Parquet, gzip), cloud storage (GCS, S3), built-in vendor transforms, automatic data fixes, deduplication, and concurrent HTTP connections for maximum throughput.
+
+###### Streaming installation
+
+The streaming interface requires additional dependencies. Install them with:
+
+```
+pip3 install mixpanel-utils[streaming]           # core streaming
+pip3 install mixpanel-utils[streaming-gcs]       # + Google Cloud Storage support
+pip3 install mixpanel-utils[streaming-s3]        # + AWS S3 support
+pip3 install mixpanel-utils[streaming-all]       # everything
+```
+
+###### Stream import events
+
+```python
+await mputils.stream.import_events(data, options=None)
+```
+
+Example:
+
+```python
+import asyncio
+from mixpanel_utils import MixpanelUtils
+
+mputils = MixpanelUtils(
+	service_account_username='my-user.12345.mp-service-account',
+	service_account_password='ServiceAccountPasswordHere',
+	project_id=12345,
+	token='ProjectTokenHere',
+)
+
+result = asyncio.run(mputils.stream.import_events('./events.jsonl'))
+print(f"Imported {result['success']:,} events in {result['duration_human']}")
+```
+
+Imports events to Mixpanel at high throughput. The `data` parameter accepts a file path (JSONL, JSON, CSV, Parquet, or gzipped), a list of event dicts, an async iterator, or a cloud storage URL (`gs://bucket/path` or `s3://bucket/path`). The file format is auto-detected from the extension, or you can set it explicitly with the `stream_format` option. Returns a results dict with `total`, `success`, `failed`, `duration_human`, and other statistics.
+
+```python
+# Import with options
+result = asyncio.run(mputils.stream.import_events('./events.csv', {
+	'stream_format': 'csv',
+	'fix_data': True,
+	'dedupe': True,
+}))
+```
+
+###### Stream import people
+
+```python
+await mputils.stream.import_people(data, options=None)
+```
+
+Example:
+
+```python
+result = asyncio.run(mputils.stream.import_people('./profiles.jsonl'))
+```
+
+Imports user profiles to Mixpanel. Accepts the same `data` formats as `stream.import_events`. Profile data should include a `$distinct_id` and properties.
+
+###### Stream import groups
+
+```python
+await mputils.stream.import_groups(data, options=None)
+```
+
+Example:
+
+```python
+mputils.define_group_context(group_key='company_id')
+result = asyncio.run(mputils.stream.import_groups('./groups.jsonl'))
+```
+
+Imports group profiles to Mixpanel. Requires `group_key` to be set via `define_group_context` or at initialization.
+
+###### Stream export events
+
+```python
+await mputils.stream.export_events(filename=None, options=None)
+```
+
+Example:
+
+```python
+result = asyncio.run(mputils.stream.export_events('export.jsonl', {
+	'start': '2024-01-01',
+	'end': '2024-01-31',
+}))
+```
+
+Exports raw events from Mixpanel. Requires `start` and `end` dates in `YYYY-MM-DD` format. If `filename` is provided, events are written to that file. If `filename` is `None`, events are returned in memory. You can optionally pass a `where` clause for server-side filtering and a `limit` to cap the number of records.
+
+###### Stream export people
+
+```python
+await mputils.stream.export_people(folder=None, options=None)
+```
+
+Example:
+
+```python
+result = asyncio.run(mputils.stream.export_people('./people_export/'))
+```
+
+Exports user profiles from Mixpanel to the specified folder.
+
+###### Stream export groups
+
+```python
+await mputils.stream.export_groups(folder=None, options=None)
+```
+
+Example:
+
+```python
+mputils.define_group_context(data_group_id='123456789')
+result = asyncio.run(mputils.stream.export_groups('./group_export/'))
+```
+
+Exports group profiles from Mixpanel. Requires `data_group_id` to be set.
+
+###### Cross-project migration
+
+```python
+await mputils.stream.export_import_events(options=None)
+await mputils.stream.export_import_people(options=None)
+await mputils.stream.export_import_groups(options=None)
+```
+
+Example:
+
+```python
+# Export events from the current project and import them into another
+result = asyncio.run(mputils.stream.export_import_events({
+	'start': '2024-01-01',
+	'end': '2024-12-31',
+	'second_token': 'TARGET_PROJECT_TOKEN',
+}))
+print(f"Migrated {result['success']:,} events")
+```
+
+Exports data from the current project and re-imports it in a single operation. Use the `second_token` option to import into a different project. This works for events, user profiles, and group profiles. This is the simplest way to migrate data between Mixpanel projects.
+
+###### Vendor migrations
+
+```python
+result = asyncio.run(mputils.stream.import_events('./amplitude_export.json', {
+	'vendor': 'amplitude',
+}))
+```
+
+The `vendor` option applies vendor-specific field mapping and transformations so data from other analytics platforms can be imported directly into Mixpanel. Supported vendors:
+
+- `amplitude` — Amplitude event exports
+- `heap` — Heap event data
+- `ga4` — Google Analytics 4 exports
+- `posthog` — PostHog event data
+- `mparticle` — mParticle event data
+- `june` — June analytics data
+- `mixpanel` — Mixpanel's own export format (useful for re-importing)
+
+You can pass additional vendor-specific configuration with the `vendor_opts` option as a dict.
+
+###### Streaming options reference
+
+All `stream.*` methods accept an `options` dict. These are the most commonly used options:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `fix_data` | bool | `False` | Auto-fix common data issues (missing fields, type coercion) |
+| `dedupe` | bool | `False` | Remove duplicate records via content hashing |
+| `compress` | bool | `True` | Gzip compress HTTP requests |
+| `workers` | int | `10` | Number of concurrent HTTP connections |
+| `records_per_batch` | int | `2000` | Records per API batch |
+| `vendor` | str | `None` | Apply a vendor-specific transform |
+| `dry_run` | bool | `False` | Transform data without sending to Mixpanel |
+| `stream_format` | str | auto | Force input format: `json`, `jsonl`, `csv`, or `parquet` |
+| `strict` | bool | `True` | Validate data strictly before sending |
+| `region` | str | inherited | Data residency region (`US`, `EU`, or `IN`). Inherited from the parent `MixpanelUtils` instance by default |
+| `tags` | dict | `{}` | Properties to add to every record |
+| `aliases` | dict | `{}` | Rename property keys |
+| `scrub_props` | list | `[]` | Properties to remove from every record |
+| `fix_time` | bool | `False` | Normalize timestamps to UNIX epoch |
+| `flatten` | bool | `False` | Flatten nested properties |
+| `remove_nulls` | bool | `False` | Remove null/empty values |
+| `epoch_start` | int | `0` | Skip records before this UNIX timestamp |
+| `epoch_end` | int | `9991427224` | Skip records after this UNIX timestamp |
+| `event_whitelist` | list | `[]` | Only import these event names |
+| `event_blacklist` | list | `[]` | Skip these event names |
+
+#### CLI
+
+The `mixpanel-utils` command-line tool is installed alongside the streaming extras. It provides the same import, export, and migration functionality without writing any Python.
+
+```
+pip3 install mixpanel-utils[streaming]
+```
+
+Usage:
+
+```
+mixpanel-utils DATA --type TYPE --token TOKEN [options]
+```
+
+Run `mixpanel-utils --help` for the full list of options.
+
+###### CLI examples
+
+```bash
+# Import events from a JSONL file
+mixpanel-utils ./events.jsonl --type event --token YOUR_TOKEN
+
+# Import a CSV file (explicit format)
+mixpanel-utils ./data.csv --type event --token YOUR_TOKEN --format csv
+
+# Import from a cloud storage URL
+mixpanel-utils gs://my-bucket/events.json --type event --token YOUR_TOKEN
+
+# Import user profiles
+mixpanel-utils ./profiles.jsonl --type user --token YOUR_TOKEN
+
+# Export events to a file
+mixpanel-utils --type export --acct USER --pass PASS --project 12345 \
+    --start 2024-01-01 --end 2024-01-31
+
+# Export and re-import events to another project
+mixpanel-utils --type export-import-event --acct USER --pass PASS --project 12345 \
+    --start 2024-01-01 --end 2024-12-31 --second-token TARGET_TOKEN
+
+# Vendor migration (e.g., from Amplitude)
+mixpanel-utils ./amplitude_export.json --type event --token YOUR_TOKEN --vendor amplitude
+
+# Dry run (transform data without sending to Mixpanel)
+mixpanel-utils ./events.jsonl --type event --dry-run
+
+# Disable auto-fix
+mixpanel-utils ./events.jsonl --type event --token YOUR_TOKEN --no-fix
+```
+
+Authentication can also be provided via environment variables: `MP_PROJECT`, `MP_ACCT`, `MP_PASS`, `MP_TOKEN`, `MP_SECRET`.
 
 #### Advanced scripting techniques
 

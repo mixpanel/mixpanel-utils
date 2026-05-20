@@ -1,0 +1,4 @@
+event,time,$insert_id,page
+PageView,1700000000,c1,/home
+Click,1700000001,c2,/signup
+Purchase,1700000002,c3,/checkout

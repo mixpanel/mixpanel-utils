@@ -61,3 +61,10 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Streaming dev files (local only)
+scratch-*.py
+SCRATCH_TEST_DATA/
+.vscode/
+.venv/
+.pytest_cache/

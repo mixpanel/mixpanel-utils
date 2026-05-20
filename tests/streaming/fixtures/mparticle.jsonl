@@ -1,0 +1,1 @@
+{"events":[{"event_type":"custom_event","data":{"event_name":"Purchase","timestamp_unixtime_ms":1700000000000,"custom_attributes":{"product":"Widget"},"event_id":"mp-ev-1"}}],"user_identities":[{"identity_type":"customer_id","identity":"cust-001"}],"mpid":"mp-123","batch_id":"batch-1"}
