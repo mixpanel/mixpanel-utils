@@ -1,0 +1,10 @@
+{
+  "analytics": {
+    "tag_prefix": "v",
+    "setup_py": "setup.py",
+    "version_files": [],
+    "changelog": "CHANGELOG.md",
+    "readme": "README.md",
+    "package_name": "mixpanel-utils"
+  }
+}
