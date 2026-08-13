@@ -1,6 +1,6 @@
 # Mixpanel-utils Module
 
-##### _May 12, 2026_ - [v3.0.0](https://github.com/mixpanel/mixpanel-utils/releases/tag/v3.0.0)
+##### _May 12, 2026_ - [v3.0.0](CHANGELOG.md#300---2026-03-10)
 
 ### Please note: From v2.0 this module supports Python 3 only. If you require Python 2 use the older mixpanel_api v1.6.5.
 
@@ -66,7 +66,7 @@ mputils = MixpanelUtils(
 )
 ```
 
-**IMPORTANT:** [Project Secret (API Secret)](https://developer.mixpanel.com/reference/project-secret) authentication has been deprecated and will be fully retired on March 3, 2027. Please migrate to [Service Accounts](https://developer.mixpanel.com/reference/service-accounts) instead, as they are the recommended authentication mechanism going forward.
+**IMPORTANT:** [Project Secret (API Secret)](https://docs.mixpanel.com/reference/project-secret) authentication has been deprecated and will be fully retired on March 3, 2027. Please migrate to [Service Accounts](https://docs.mixpanel.com/reference/service-accounts) instead, as they are the recommended authentication mechanism going forward.
 
 And use the functions below.
 
@@ -130,7 +130,7 @@ Example:
 mputils.export_events('event_export.txt',{'from_date':'2016-01-01','to_date':'2016-01-01','event':'["App Install"]'})
 ```
 
-Exports raw events and writes them to a file using the export endpoint. You must specify the file, the export params (see [here](https://mixpanel.com/help/reference/exporting-raw-data#export-api-reference) for full list of parameters) and the format (default is JSON). Current supported formats are json or csv. You may also add a timezone_offset which should be the offset from UTC the project is in. This modifies the time property so it is in unix time. You can also specify that you wish to receive the files as gzip from our servers using the add_gzip_header option. This is recommended if you believe the export will be large as it can significantly improve transfer time. You may also specify whether you wish to gzip the data after receiving it using the compress option
+Exports raw events and writes them to a file using the export endpoint. You must specify the file, the export params (see [here](https://docs.mixpanel.com/reference/raw-event-export) for full list of parameters) and the format (default is JSON). Current supported formats are json or csv. You may also add a timezone_offset which should be the offset from UTC the project is in. This modifies the time property so it is in unix time. You can also specify that you wish to receive the files as gzip from our servers using the add_gzip_header option. This is recommended if you believe the export will be large as it can significantly improve transfer time. You may also specify whether you wish to gzip the data after receiving it using the compress option
 
 ###### Export people
 
@@ -146,7 +146,7 @@ parameters = { 'selector' : selector}
 mputils.export_people('people_export.txt',parameters,timezone_offset=-8)
 ```
 
-Exports people profiles and writes them to a file using the engage endpoint. You must specify the file, the export params (see [here](https://mixpanel.com/help/reference/data-export-api#people-analytics) for full list of parameters) and the export format (default is JSON). Current supported formats are JSON or CSV. In addition if you are using behaviors in your parameters you must specify a timezone_offset parameter. See [import_events](#import-events) for information on the timezone_offset parameter. You may also specify whether you wish to gzip the data after receiving it using the compress option.
+Exports people profiles and writes them to a file using the engage endpoint. You must specify the file, the export params (see [here](https://docs.mixpanel.com/reference/engage-query) for full list of parameters) and the export format (default is JSON). Current supported formats are JSON or CSV. In addition if you are using behaviors in your parameters you must specify a timezone_offset parameter. See [import_events](#import-events) for information on the timezone_offset parameter. You may also specify whether you wish to gzip the data after receiving it using the compress option.
 
 ###### Import events
 
@@ -160,7 +160,7 @@ Example:
 mputils.import_events('event_export.txt',timezone_offset=-8)
 ```
 
-Imports events using the import endpoint. The data parameter is expected to be a filename of a file containing either a CSV or JSON object or list of JSON objects (as in a raw event export) or a list of events. You must specify a timezone offset. This will be the project's timezone offset from UTC. For instance PST is -8 so in that case timezone_offset=-8 would be how you import data that was exported from a project in pacific time during PST time (assuming no timezone_offset was set in the export_events call). The dataset_version is the parameter you must specify if you are importing events into a dataset. See the section on [importing into datasets](#importing-data-into-a-dataset) for more information.
+Imports events using the import endpoint. The data parameter is expected to be a filename of a file containing either a CSV or JSON object or list of JSON objects (as in a raw event export) or a list of events. You must specify a timezone offset. This will be the project's timezone offset from UTC. For instance PST is -8 so in that case timezone_offset=-8 would be how you import data that was exported from a project in pacific time during PST time (assuming no timezone_offset was set in the export_events call). The dataset_version is the parameter you must specify if you are importing events into a dataset.
 
 ###### Import people
 
@@ -174,7 +174,7 @@ Example:
 mputils.import_people('people_export.txt')
 ```
 
-imports people using the engage endpoint. The data parameter is expected to be a filename or a list of objects. The file should be either in CSV or JSON format. The list should be a list of JSON objects (as in an engage export). By default import people checks to see if the distinct_ids specified are aliased. You may specify you wish to ignore alias using ignore_alias=True. If the import is composed of raw engage API updates you may choose to turn on the raw_record_import flag. The dataset_version parameter is for if you wish to import people profiles into a dataset. See the section on [importing into datasets](#importing-data-into-a-dataset) for more information. This method ignores time and IP (so the people profile’s last seen and location will not be updated).
+imports people using the engage endpoint. The data parameter is expected to be a filename or a list of objects. The file should be either in CSV or JSON format. The list should be a list of JSON objects (as in an engage export). By default import people checks to see if the distinct_ids specified are aliased. You may specify you wish to ignore alias using ignore_alias=True. If the import is composed of raw engage API updates you may choose to turn on the raw_record_import flag. The dataset_version parameter is for if you wish to import people profiles into a dataset. This method ignores time and IP (so the people profile’s last seen and location will not be updated).
 
 ###### People delete
 
@@ -188,7 +188,7 @@ Example:
 mputils.people_delete(query_params={ 'selector' : '(("Albany" in properties["$city"]) and (defined (properties["$city"])))'})
 ```
 
-Deletes people profiles using the engage endpoint. You may provide a list of profiles to be deleted or a query parameter (see [here](https://mixpanel.com/help/reference/data-export-api#people-analytics). By default this will create a backup of these profiles with the name backup\_{timestamp}.json where timestamp is the current time in epoch time. You may also provide a backup file name using the backup_file parameter. If your selector is using a behavior you must specify a timezone_offset parameter. This will be the UTC offset of your project time.
+Deletes people profiles using the engage endpoint. You may provide a list of profiles to be deleted or a query parameter (see [here](https://docs.mixpanel.com/reference/engage-query). By default this will create a backup of these profiles with the name backup\_{timestamp}.json where timestamp is the current time in epoch time. You may also provide a backup file name using the backup_file parameter. If your selector is using a behavior you must specify a timezone_offset parameter. This will be the UTC offset of your project time.
 
 ###### Set properties
 
@@ -202,7 +202,7 @@ Example:
 mputils.people_set({'chiles':'green'},query_params={ 'selector' : '(("Albuquerque" in properties["$city"]) and (defined (properties["$city"])))'}	)
 ```
 
-Sets people properties to a specific value using the engage endpoint. This should be a dictionary where the keys are the properties you wish to set and the values are the values of those properties. For example, if value was equal to `{ ‘user_level’ : 1 }` it would add the property ‘user*level’ with a value of 1 to all the profiles. You can provide a list of profiles to be deleted or a query parameter (see here for full list of parameters). By default a people_set function call will perform an alias lookup for the distint_id, however by setting the ignore_alias parameter to True it will not perform an alias lookup for the distinct_id. By default this will create a backup of these profiles, however, if you do not want it to you can set the backup property to false to turn off backing up the profiles. The name of this backup profile by default will be name backup*{timestamp}.json where timestamp is the current time in epoch time. You may also provide a backup file name using the backup_file parameter. If you are using behaviors in your query_params you must specify a timezone_offset.
+Sets people properties to a specific value using the engage endpoint. This should be a dictionary where the keys are the properties you wish to set and the values are the values of those properties. For example, if value was equal to `{ ‘user_level’ : 1 }` it would add the property ‘user*level’ with a value of 1 to all the profiles. You can provide a list of profiles to be deleted or a query parameter (see [here](https://docs.mixpanel.com/reference/engage-query) for full list of parameters). By default a people_set function call will perform an alias lookup for the distint_id, however by setting the ignore_alias parameter to True it will not perform an alias lookup for the distinct_id. By default this will create a backup of these profiles, however, if you do not want it to you can set the backup property to false to turn off backing up the profiles. The name of this backup profile by default will be name backup*{timestamp}.json where timestamp is the current time in epoch time. You may also provide a backup file name using the backup_file parameter. If you are using behaviors in your query_params you must specify a timezone_offset.
 
 ###### Set once properties
 
@@ -346,7 +346,7 @@ parameters = {'selector' : selector}
 mputils.export_groups('group_export.json',parameters)
 ```
 
-Exports group profiles and writes them to a file using the engage endpoint. You must specify the file, the export params (see [here](https://mixpanel.com/help/reference/data-export-api#people-analytics) for full list of parameters) and the export format (default is JSON). Current supported formats are JSON or CSV. 
+Exports group profiles and writes them to a file using the engage endpoint. You must specify the file, the export params (see [here](https://docs.mixpanel.com/reference/engage-query) for full list of parameters) and the export format (default is JSON). Current supported formats are JSON or CSV. 
 
 **Note:** any group export operation requires defining the data_group_id associated to the group. You can find this in project settings [reference these docs](https://docs.mixpanel.com/docs/data-structure/group-analytics#setup-b2b-company-key). This can be defined either when you initialize the module, when you create the instance of `MixpanelUtils` as a parameter, or, at any point before exporting the data via the `define_group_context` function, like:
 
@@ -367,7 +367,7 @@ mputils.define_group_context(group_key="company_id")
 mputils.import_groups('group_profiles.json')
 ```
 
-imports group profiles using the [/groups endpoint](https://developer.mixpanel.com/reference/group-set-property). The data parameter is expected to be a filename or a list of objects. The file should be either in CSV or JSON format. The list should be a list of JSON objects (as in a /group export). This method ignores time and IP (so the group profile’s last seen and location will not be updated).
+imports group profiles using the [/groups endpoint](https://docs.mixpanel.com/reference/group-set-property). The data parameter is expected to be a filename or a list of objects. The file should be either in CSV or JSON format. The list should be a list of JSON objects (as in a /group export). This method ignores time and IP (so the group profile’s last seen and location will not be updated).
 
 `data_group_id` must be defined (can be located in project settings). You can define it when initializing the `MixpanelUtils` instance as a parameter, or, you can define it before each execution via the `define_group_context` function.
 
@@ -385,7 +385,7 @@ mputils.define_group_context(data_group_id='123456789',group_key="company_id")
 mputils.group_set({'plan':'Enterprise'},query_params={ 'selector' : 'properties["plan"] = "Ent"'})
 ```
 
-Sets group properties to a specific value using the /group endpoint. This should be a dictionary where the keys are the properties you wish to set and the values are the values of those properties. For example, if value was equal to `{'active' : True }` it would add the property `active` with a value of `True` to all the profiles. You can provide a list of group profiles to be updated or a query parameter (see here for full list of parameters).
+Sets group properties to a specific value using the /group endpoint. This should be a dictionary where the keys are the properties you wish to set and the values are the values of those properties. For example, if value was equal to `{'active' : True }` it would add the property `active` with a value of `True` to all the profiles. You can provide a list of group profiles to be updated or a query parameter (see [here](https://docs.mixpanel.com/reference/engage-query) for full list of parameters).
 
 **Note:** for any sort of update/delete operation, the `group_key` needs to be defined (available in your project settings). Similar to the /export_groups function, if instead of passing a list of group profiles, you pass query params, the `data_group_id` must also be defined (also in project settings). You can define either or both when initializing the `MixpanelUtils` instance as a parameter, or, you can define it before each execution via the `define_group_context` function. The latter can be helpful if you have multiple type of group profiles (say company_id vs team_id), you are sending multiple update operations and you need to switch the context between them.
 
@@ -431,7 +431,7 @@ function main() {
 mputils.query_jql(script)
 ```
 
-Queries the JQL API. This accepts a script parameter which is a string containing the JQL query you'd like to run (see [here](https://mixpanel.com/help/reference/jql) for information on writing JQL queries). It also accepts a dictionary of global parameters (see [here](https://mixpanel.com/help/reference/jql/api-reference#api/params) for more information on JQL global parameters) by passing this dictionary into the params property. This function will return the JSON response of the JQL query as a python dictionary.
+Queries the JQL API. This accepts a script parameter which is a string containing the JQL query you'd like to run (see [here](https://docs.mixpanel.com/reference/query-jql) for information on writing JQL queries). It also accepts a dictionary of global parameters (see [here](https://docs.mixpanel.com/reference/query-jql) for more information on JQL global parameters) by passing this dictionary into the params property. This function will return the JSON response of the JQL query as a python dictionary.
 
 ###### Import from Amplitude
 
@@ -451,8 +451,8 @@ Downloads Amplitude project data and imports events and profiles into your Mixpa
 Note:
 
 1. Start and end dates are in `YYYYMMDDTHH` format.
-2. start and end date are as per `server_upload_time` as per [Export API doc](https://www.docs.developers.amplitude.com/analytics/apis/export-api/?h=export#considerations).
-3. This script would be for projects on [Original ID Merge](https://docs.mixpanel.com/docs/tracking/how-tos/identifying-users#how-does-the-simplified-api-differ-from-the-original-api) only.
+2. start and end date are as per `server_upload_time` as per [Export API doc](https://amplitude.com/docs/apis/analytics/export).
+3. This script would be for projects on [Original ID Merge](https://docs.mixpanel.com/docs/tracking-methods/id-management/identifying-users-original) only.
 
 #### Advanced scripting techniques
 
