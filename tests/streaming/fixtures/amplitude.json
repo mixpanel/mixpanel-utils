@@ -1,0 +1,1 @@
+{"event_type":"Button Click","device_id":"dev-001","event_time":"2024-01-15T10:30:00Z","user_id":"amp-user-1","ip_address":"1.2.3.4","event_properties":{"button":"signup"},"user_properties":{"plan":"pro"},"$insert_id":"amp-insert-1"}

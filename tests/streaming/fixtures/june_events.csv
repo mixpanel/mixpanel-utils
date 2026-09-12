@@ -1,0 +1,3 @@
+name,user_id,anonymous_id,timestamp,properties,context,type
+Signup,june-u1,june-a1,2024-01-15T10:30:00Z,"{""plan"":""pro""}","{""ip"":""1.2.3.4""}",track
+Login,june-u1,june-a1,2024-01-15T11:00:00Z,"{""method"":""sso""}","{""ip"":""1.2.3.4""}",track
