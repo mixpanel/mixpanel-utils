@@ -1,11 +1,6 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [3.0.0] - 2026-03-10
+## [v3.0.0](https://github.com/mixpanel/mixpanel-utils/tree/v3.0.0) (2026-11-25)
 
 ### BREAKING CHANGES
 
@@ -55,6 +50,9 @@ To create a Service Account, visit your Mixpanel project settings or refer to th
 
 - Support for Project Secret (API Secret) authentication
 - Conditional logic for Service Account vs API Secret authentication
+
+### Fixes
+- handle periods in output_file paths for export_events with request_per_day ([#65](https://github.com/mixpanel/mixpanel-utils/pull/65))
 
 ## [2.2.7] - Previous Release
 
