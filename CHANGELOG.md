@@ -1,5 +1,10 @@
 # Changelog
 
+## [v3.0.0](https://github.com/mixpanel/mixpanel-utils/tree/v3.0.0) (2026-11-25)
+
+### Fixes
+- handle periods in output_file paths for export_events with request_per_day ([#65](https://github.com/mixpanel/mixpanel-utils/pull/65))
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),

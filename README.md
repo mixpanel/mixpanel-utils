@@ -1,6 +1,6 @@
 # Mixpanel-utils Module
 
-##### _May 12, 2026_ - [v3.0.0](CHANGELOG.md#300---2026-03-10)
+##### _November 25, 2026_ - [v3.0.0](https://github.com/mixpanel/mixpanel-utils/releases/tag/v3.0.0)
 
 ### Please note: From v2.0 this module supports Python 3 only. If you require Python 2 use the older mixpanel_api v1.6.5.
 
