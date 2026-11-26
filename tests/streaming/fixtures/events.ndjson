@@ -1,0 +1,3 @@
+{"event":"PageView","properties":{"time":1700000000,"$insert_id":"a1","page":"/home"}}
+{"event":"Click","properties":{"time":1700000001,"$insert_id":"a2","button":"signup"}}
+{"event":"Purchase","properties":{"time":1700000002,"$insert_id":"a3","amount":42}}

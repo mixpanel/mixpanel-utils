@@ -1,0 +1,4 @@
+[
+  {"event":"A","properties":{"time":1700000000,"$insert_id":"j1"}},
+  {"event":"B","properties":{"time":1700000001,"$insert_id":"j2"}}
+]
