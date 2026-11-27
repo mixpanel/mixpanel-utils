@@ -2270,17 +2270,19 @@ class MixpanelUtils(object):
 
         :param params: Query parameters for the /engage API
         :type params: dict
+        :raise RuntimeError: Raises RuntimeError if the /engage request fails (e.g. HTTP 429) or has no results
         :return: /engage API response object
         :rtype: dict
 
         """
         response = self.request(self.formatted_api, ["engage"], params)
+        if response is None:
+            # request() logs the HTTP error (e.g. 429) and returns None for non-retryable errors
+            raise RuntimeError("Request to /engage failed, see the logged HTTP error for details")
         data = json.loads(response)
-        if "results" in data:
-            return data
-        else:
-            MixpanelUtils.LOGGER.error(f"Invalid response from /engage: {response}")
-            return
+        if "results" not in data:
+            raise RuntimeError(f"Invalid response from /engage: {response}")
+        return data
 
     def _dispatch_batches(
             self, base_url, endpoint, item_list, prep_args, batch_size=2000
