@@ -1851,7 +1851,7 @@ class MixpanelUtils(object):
             header.append(key)
 
         # Create the writer and write the header
-        with open(output_file, "w", encoding="utf-8") as output:
+        with open(output_file, "w", encoding="utf-8", newline="") as output:
             writer = csv.writer(output)
 
             writer.writerow(header)
