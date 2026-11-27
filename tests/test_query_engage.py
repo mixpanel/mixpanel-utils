@@ -24,3 +24,9 @@ def test_query_engage_raises_clear_error_when_rate_limited():
     with patch("urllib.request.urlopen", side_effect=rate_limited):
         with pytest.raises(RuntimeError, match="/engage"):
             _client().query_engage()
+
+
+def test_query_engage_raises_clear_error_when_response_has_no_results():
+    with patch.object(MixpanelUtils, "request", return_value='{"error": "bad request"}'):
+        with pytest.raises(RuntimeError, match="Invalid response from /engage"):
+            _client().query_engage()
