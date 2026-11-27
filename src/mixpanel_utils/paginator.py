@@ -27,7 +27,7 @@ Github repo: https://github.com/cooncesean/mixpanel-query-py
 
 import math
 import itertools
-from multiprocessing.pool import ThreadPool
+from concurrent.futures import ThreadPoolExecutor
 
 
 class ConcurrentPaginator(object):
@@ -76,11 +76,11 @@ class ConcurrentPaginator(object):
         return _fetcher_func
 
     def _concurrent_flatmap(self, func, iterable):
-        pool = ThreadPool(processes=self.concurrency)
-        res = list(itertools.chain(*pool.map(func, iterable)))
-        pool.close()
-        pool.join()
-        return res
+        # ThreadPoolExecutor is used instead of multiprocessing.pool.ThreadPool
+        # because the latter needs POSIX semaphores (/dev/shm), which are not
+        # available in environments such as AWS Lambda.
+        with ThreadPoolExecutor(max_workers=self.concurrency) as executor:
+            return list(itertools.chain(*executor.map(func, iterable)))
 
     def _remaining_page_range(self, response):
         num_pages = math.ceil(response["total"] / float(response["page_size"]))

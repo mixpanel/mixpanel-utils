@@ -12,12 +12,12 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from http.client import IncompleteRead
 from inspect import isfunction
 from json.decoder import JSONDecodeError
 from multiprocessing import cpu_count
-from multiprocessing.pool import ThreadPool
 from socket import timeout
 
 from .paginator import ConcurrentPaginator
@@ -2299,8 +2299,12 @@ class MixpanelUtils(object):
         :type prep_args: list
 
         """
-        pool = ThreadPool(processes=self.pool_size)
+        # ThreadPoolExecutor rather than multiprocessing.pool.ThreadPool, which needs /dev/shm (missing on AWS Lambda)
+        executor = ThreadPoolExecutor(max_workers=self.pool_size)
         batch = []
+
+        def send_batch(items):
+            MixpanelUtils._async_response_handler_callback(self._send_batch(base_url, endpoint, items))
 
         # Decide which _prep function to use based on the endpoint
         if endpoint == "import" or endpoint == "import-events":
@@ -2327,23 +2331,14 @@ class MixpanelUtils(object):
 
             if len(batch) == batch_size:
                 # Add an asynchronous call to _send_batch to the thread pool
-                pool.apply_async(
-                    self._send_batch,
-                    args=(base_url, endpoint, batch),
-                    callback=MixpanelUtils._async_response_handler_callback,
-                )
+                executor.submit(send_batch, batch)
                 batch = []
 
         # If there are fewer than 50 updates left ensure one last call is made
         if len(batch):
             # Add an asynchronous call to _send_batch to the thread pool
-            pool.apply_async(
-                self._send_batch,
-                args=(base_url, endpoint, batch),
-                callback=MixpanelUtils._async_response_handler_callback,
-            )
-        pool.close()
-        pool.join()
+            executor.submit(send_batch, batch)
+        executor.shutdown(wait=True)
 
     def _send_batch(
             self, base_url, endpoint, batch, retries=0,
